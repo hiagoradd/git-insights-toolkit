@@ -37,15 +37,28 @@ matters for the theme × PR-type matrix.
 
 ## Reinforcement mapping (systemic patterns → cheapest enforcement)
 
-When a theme recurs (**≥3 comments** in the window, or across ≥2 runs once trends exist), map it
-to the cheapest layer that would prevent it, in this order:
+First, survey the target repo's **standing-guidance surface** — everything that already tells the
+team, or their AI tools, how to write code here:
+
+- `.claude/rules/*`
+- every `CLAUDE.md` (root, `apps/*/`, `packages/*/`)
+- **skills & agents** — `.claude/skills/**/SKILL.md`, `.claude/agents/*`, and any installed
+  plugin skills/agents (their `SKILL.md` / agent frontmatter + body)
+
+When a theme recurs (**≥3 comments** in the window, or across ≥2 runs once trends exist), grep it
+across that whole surface and map it to the cheapest layer that would prevent it, in this order:
 
 1. **Automation** (lint / CI / typecheck) — best, cannot be forgotten.
-2. **Existing `.claude/rule` that's being ignored** — strengthen it (better example, move it
-   earlier, add to CLAUDE.md). Detect by grepping the theme against `.claude/rules/*` and
-   `**/CLAUDE.md` — "we already have a rule and still violate it" is the highest-signal finding.
-3. **New `.claude/rule` or CLAUDE.md line** — when no rule covers it.
+2. **Existing guidance that isn't landing** — a `.claude/rule`, a `CLAUDE.md` line, or a
+   **skill/agent** that already covers this area but is being ignored or is too weak. Strengthen it
+   in place (sharper example, move it earlier, add the missing case). "We already say this and
+   still violate it" is the highest-signal finding — and a skill/agent that *runs on every task*
+   is often the cheapest place to reinforce, above a passive rule.
+3. **New standing guidance** — add it where the team already looks: a new `.claude/rule`, a
+   `CLAUDE.md` line, or a line in the most relevant existing skill/agent. Author a brand-new skill
+   only when a whole workflow is missing.
 4. **Process / PR-template** — when only a human gate can catch it.
 
-Emit a **concrete** proposal (which file, what text), not a vague "add a rule". Prioritize by
+Emit a **concrete** proposal — the exact file and the text to add or change, and whether it
+**modifies existing** guidance or **adds new** — not a vague "add a rule". Prioritize by
 `recurrence × severity × preventability`.

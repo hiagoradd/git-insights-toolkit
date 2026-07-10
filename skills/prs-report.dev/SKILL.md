@@ -1,6 +1,6 @@
 ---
 name: prs-report.dev
-description: Generate the Developer Coaching report for the cxnch-platform repo — the "what does the team keep getting wrong in review, and how do we stop it" report. Classifies every actionable review comment by theme and severity, builds a theme × PR-type matrix, clusters recurring feedback into systemic patterns, and maps each to the cheapest reinforcement (lint/CI rule, an existing .claude/rule that isn't landing, a new rule, or a PR-template gate) with a concrete file+text proposal. Reads a prs.fetch run directory (or fetches one if not given). Use when asked for recurring review comments, systemic patterns, reinforcement recommendations, or coaching insights. Triggers on: "developer coaching", "recurring review comments", "systemic patterns", "reinforcement recommendations", "what are we getting wrong in reviews".
+description: Generate the Developer Coaching report for the cxnch-platform repo — the "what does the team keep getting wrong in review, and how do we stop it" report. Classifies every actionable review comment by theme and severity, builds a theme × PR-type matrix, clusters recurring feedback into systemic patterns, and maps each to the cheapest reinforcement — reading the repo's standing guidance (.claude/rules, CLAUDE.md files, and skills/agents) to propose strengthening or adding to whichever already covers it, or a lint/CI rule or PR-template gate — with a concrete file+text proposal. Reads a prs.fetch run directory (or fetches one if not given). Use when asked for recurring review comments, systemic patterns, reinforcement recommendations, or coaching insights. Triggers on: "developer coaching", "recurring review comments", "systemic patterns", "reinforcement recommendations", "what are we getting wrong in reviews".
 ---
 
 # PR Insights — Developer Coaching
@@ -30,10 +30,15 @@ used only to derive `resolution`.
 ## 2. Find systemic patterns & map reinforcements
 
 Cluster comments by theme. For any theme that recurs (**≥3** in the window), map it to the
-cheapest enforcement layer per the reference's ordering (automation > strengthen-existing-rule >
-new-rule > process). **Grep the theme against `.claude/rules/*` and root/`apps/*/CLAUDE.md`** to
-detect "we already have a rule and still violate it" — that's the highest-signal finding. Emit a
-*concrete* proposal (which file, what text), ranked by `recurrence × severity × preventability`.
+cheapest enforcement layer per the reference's ordering (automation > strengthen-existing-guidance
+> new-guidance > process). Survey the target repo's whole **standing-guidance surface** —
+`.claude/rules/*`, every `CLAUDE.md`, and its **skills & agents**
+(`.claude/skills/**/SKILL.md`, `.claude/agents/*`, and installed plugin skills/agents) — and grep
+the theme across it to detect "we already say this and still violate it" (the highest-signal
+finding). Then emit a *concrete* proposal to **change or add to** the most relevant rule,
+`CLAUDE.md`, or skill/agent — the exact file and text, and whether it modifies existing guidance or
+adds new — ranked by `recurrence × severity × preventability`. See `references/classification.md`
+for the full ladder.
 
 ## 3. Render — write one file
 
@@ -44,12 +49,12 @@ narrative number must trace to a table.
 take the parts from `manifest.json`).
 
 **Return** only the file path + a 3–5 line headline summary — lead with the biggest recurring
-pattern and the "rule exists but not landing" count.
+pattern and the "guidance exists but not landing" count (rule / CLAUDE.md / skill).
 
 ## Boundaries & caveats
 
 - Read-only except the one report file. The reinforcement step **proposes** edits; applying them
-  is a separate, user-approved action — never edit rules/CLAUDE.md from here.
+  is a separate, user-approved action — never edit rules / CLAUDE.md / skills from here.
 - Severity is judged from comment **content**; note how many PRs got a formal GitHub "Changes
   requested" (often zero — reviewers here approve-with-comments).
 - Small windows are noisy: one person's week is ~20 comments — patterns need several weeks.

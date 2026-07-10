@@ -13,7 +13,8 @@ trace to a table below it. Drop the "Trend" body until persisted runs exist.
 
 {{3–5 sentences. Name the single biggest recurring pattern and whether it's code-quality or
 process. Call out any genuine critical bug. State how many recurring patterns map to guidance
-we ALREADY have (rule not landing) vs. have no rule yet — that ratio is the headline.}}
+we ALREADY have (a rule / CLAUDE.md / skill that isn't landing) vs. have no guidance yet — that
+ratio is the headline.}}
 
 ## Comments by severity
 
@@ -44,11 +45,11 @@ automation / rule / process. Mark any pattern that ALREADY has a rule as "not la
 
 ## Reinforcement recommendations
 
-*Each pattern → cheapest enforcement layer → concrete proposal. Automation > rule doc > CLAUDE.md > process.*
+*Each pattern → cheapest enforcement layer → concrete proposal. Automation > strengthen existing guidance (rule / CLAUDE.md / skill or agent) > new guidance > process.*
 
 | Pattern | Already covered? | Cheapest fix | Concrete proposal (file + text) |
 |---|---|---|---|
-{{one row per systemic pattern; "Already covered?" cites the specific .claude/rule or CLAUDE.md line if one exists}}
+{{one row per systemic pattern; "Already covered?" names the specific .claude/rule, CLAUDE.md line, or skill/agent that covers it (or "none"); "Concrete proposal" gives the exact file + text and says whether it MODIFIES existing guidance or ADDS new}}
 
 ## Per-PR appendix
 
