@@ -16,7 +16,7 @@ A two-layer PR-analytics pipeline targeting the **cxnch-platform** GitHub repo:
 /prs-insights (command, orchestrator)
         │  parse args → fetch ONCE → fan out 4 report subagents in parallel
         ▼
-prs-insights-fetch  ──►  run dir (manifest.json + pulls.json + *.ndjson)
+prs.fetch  ──►  run dir (manifest.json + pulls.json + *.ndjson)
    (Bash + gh + jq,                     │  shared, read-only input
     deterministic enrichment)           ▼
         ┌──────────────┬──────────────┬──────────────┐
@@ -31,27 +31,27 @@ prs-insights-fetch  ──►  run dir (manifest.json + pulls.json + *.ndjson)
 
 ## Areas
 
-### Data pipeline + orchestration — `.claude/commands/`, `.claude/skills/prs-insights-fetch/`
+### Data pipeline + orchestration — `commands/`, `skills/prs.fetch/`
 - **Purpose:** Fetch a GitHub PR review dataset once and orchestrate the report fan-out.
 - **Stack:** Bash (`set -euo pipefail`), `gh` CLI (`gh search prs`, `gh api --paginate`, `gh repo view`), `jq`; portable GNU/BSD `date`.
-- **Run:** `bash .claude/skills/prs-insights-fetch/scripts/fetch-pr-data.sh --out <dir> [--users a,b] [--since YYYY-MM-DD|--days N] [--repo owner/name]`. Fetches PR numbers by creation date (limit 200), then per-PR parallel fetch (`xargs -P 10`) of metadata/files/reviews/review-comments/issue-comments, then `jq` enrichment.
+- **Run:** `bash skills/prs.fetch/scripts/fetch-pr-data.sh --out <dir> [--users a,b] [--since YYYY-MM-DD|--days N] [--repo owner/name]`. Fetches PR numbers by creation date (limit 200), then per-PR parallel fetch (`xargs -P 10`) of metadata/files/reviews/review-comments/issue-comments, then `jq` enrichment.
 - **Structure:**
   - `commands/prs-insights.md` — orchestrator: parse args, fetch once, spawn 4 report subagents in one message, return only paths + headlines.
-  - `skills/prs-insights-fetch/SKILL.md` — parameters, run-dir convention, output schema, boundaries (data only, no report).
-  - `skills/prs-insights-fetch/scripts/fetch-pr-data.sh` — the fetch + enrichment + manifest writer.
-  - `skills/prs-insights-fetch/references/taxonomy.md` — mechanical (zero-LLM) classification rules.
+  - `skills/prs.fetch/SKILL.md` — parameters, run-dir convention, output schema, boundaries (data only, no report).
+  - `skills/prs.fetch/scripts/fetch-pr-data.sh` — the fetch + enrichment + manifest writer.
+  - `skills/prs.fetch/references/taxonomy.md` — mechanical (zero-LLM) classification rules.
 - **Conventions:** Run dir `<scratch>/prs-insights/<since>_to_<until>_<scope>/` (scope = `team` or `+`-joined logins); reused if `manifest.json` already exists. Outputs: `pulls.json` (`type`, `sublabels[]`), `reviews.ndjson` (`is_bot`), `review-comments.ndjson` (`is_bot`, `is_self_reply`, `excluded`, `layer`), `issue-comments.ndjson`, `manifest.json` (source of truth). Enrichment: PR `type` (front-end/back-end/full-stack/e2e-testing/misc) inferred from `files[]` paths; `sublabels[]` includes `migration` for Prisma migrations; comment `layer` from path; `excluded = is_bot OR is_self_reply`.
 - **Gotchas:** Defaults to all users / last 7 days. Filters by PR **creation** date only, so in-window reviews on older PRs are missed unless `--since` is widened. `gh search prs --limit 200` cap; per-PR fetch errors are swallowed (`|| true`). Paths assume the cxnch-platform layout (`apps/web`, `apps/api`, `packages/database/prisma`).
 
-### Report generation — `.claude/skills/prs-insights-{kpis,collab,dev,exec}/`
+### Report generation — `skills/prs-insights-{kpis,collab,dev,exec}/`
 - **Purpose:** Four sibling skills, each consuming the shared fetch run directory and emitting one distinct markdown report.
 - **Stack:** Markdown-only Claude skills; data is JSON/NDJSON. The `dev` skill additionally greps `.claude/rules/*` and `**/CLAUDE.md` to map feedback to enforcement.
-- **Run:** Each reads a `prs-insights-fetch` run dir; if invoked standalone with no run dir it first runs `prs-insights-fetch`. Each writes one file to `reports/prs-insights/<since>_to_<until>_<scope>_<name>.md` and returns only the path + a short headline.
+- **Run:** Each reads a `prs.fetch` run dir; if invoked standalone with no run dir it first runs `prs.fetch`. Each writes one file to `reports/prs-insights/<since>_to_<until>_<scope>_<name>.md` and returns only the path + a short headline.
 - **Structure (skill → report):**
-  - `prs-insights-kpis` → Delivery KPIs: quantitative dashboard (volume, size, cycle times, merge / first-pass clean-merge rates, per-contributor throughput).
-  - `prs-insights-collab` → Review Collaboration: reviewer-load concentration, who-reviews-whom matrix, time-to-first-review, bus-factor risk.
-  - `prs-insights-dev` → Developer Coaching: LLM-classified recurring review feedback mapped to reinforcement proposals.
-  - `prs-insights-exec` → Executive Summary: one-page, plain-language PM/leadership digest.
+  - `prs-report.kpis` → Delivery KPIs: quantitative dashboard (volume, size, cycle times, merge / first-pass clean-merge rates, per-contributor throughput).
+  - `prs-report.collab` → Review Collaboration: reviewer-load concentration, who-reviews-whom matrix, time-to-first-review, bus-factor risk.
+  - `prs-report.dev` → Developer Coaching: LLM-classified recurring review feedback mapped to reinforcement proposals.
+  - `prs-report.exec` → Executive Summary: one-page, plain-language PM/leadership digest.
 - **Conventions:** Each fills in its `assets/report-template.md`; tables plus `████░░` bar glyphs; every narrative number traces back to a table; read-only except for the one report file written.
 - **Gotchas:** All four run in parallel and independently. `dev` is the only skill that does LLM classification — its `references/classification.md` defines fixed enums: **theme** (14 values incl. correctness-bug, convention/style, architecture/layering, test-coverage, error-handling, migration-hygiene, pr-scope, performance, security, a11y, naming/docs, dead/premature-UI, question, praise) and **severity** (critical/blocker/suggestion), plus actionability + resolution. Themes recurring ≥3 times map to the cheapest enforcement: automation > strengthen-existing-rule > new-rule > process. Week-over-week trends are stateless ("n/a first run") until run history is persisted.
 
@@ -59,11 +59,11 @@ prs-insights-fetch  ──►  run dir (manifest.json + pulls.json + *.ndjson)
 | Type | Name | What it does |
 |------|------|--------------|
 | command | prs-insights | Orchestrator: fetch the dataset once, fan out the 4 report skills in parallel, present paths + headlines |
-| skill | prs-insights-fetch | Fetch + deterministically enrich a PR review dataset via `gh`/`jq`; writes a reusable run dir + manifest. Data only |
-| skill | prs-insights-kpis | Delivery KPIs report — quantitative throughput / cycle-time dashboard |
-| skill | prs-insights-collab | Review Collaboration report — reviewer load, who-reviews-whom, bus factor |
-| skill | prs-insights-dev | Developer Coaching report — LLM-classified recurring feedback → reinforcement proposals |
-| skill | prs-insights-exec | Executive Summary report — one-page plain-language PR health digest for PMs |
+| skill | prs.fetch | Fetch + deterministically enrich a PR review dataset via `gh`/`jq`; writes a reusable run dir + manifest. Data only |
+| skill | prs-report.kpis | Delivery KPIs report — quantitative throughput / cycle-time dashboard |
+| skill | prs-report.collab | Review Collaboration report — reviewer load, who-reviews-whom, bus factor |
+| skill | prs-report.dev | Developer Coaching report — LLM-classified recurring feedback → reinforcement proposals |
+| skill | prs-report.exec | Executive Summary report — one-page plain-language PR health digest for PMs |
 
 - **MCP servers:** none declared in-repo (no `.mcp.json`)
 - **Project rules:** none — no root `CLAUDE.md` in this repo (the `dev` skill *reads* target-repo `.claude/rules/*` and `CLAUDE.md` at runtime, but the toolkit repo itself defines none)

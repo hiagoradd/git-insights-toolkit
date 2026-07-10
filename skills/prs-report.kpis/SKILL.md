@@ -1,6 +1,6 @@
 ---
-name: prs-insights-kpis
-description: Generate the Delivery KPIs report for the cxnch-platform repo — the numbers dashboard over a window of PRs: volume, PRs by type/stack, size (files & lines), merge rate, cycle times (time-to-first-review, create→approve, approve→merge), review rounds, comment density, first-pass clean-merge rate, and per-contributor throughput. Purely quantitative and deterministic; no code-quality judgment. Reads a prs-insights-fetch run directory (or fetches one if not given). Use when asked for PR metrics, delivery KPIs, throughput/cycle-time numbers, or "PRs by type". Triggers on: "pr kpis", "delivery metrics", "pr throughput", "cycle time report", "prs by type".
+name: prs-report.kpis
+description: Generate the Delivery KPIs report for the cxnch-platform repo — the numbers dashboard over a window of PRs: volume, PRs by type/stack, size (files & lines), merge rate, cycle times (time-to-first-review, create→approve, approve→merge), review rounds, comment density, first-pass clean-merge rate, and per-contributor throughput. Purely quantitative and deterministic; no code-quality judgment. Reads a prs.fetch run directory (or fetches one if not given). Use when asked for PR metrics, delivery KPIs, throughput/cycle-time numbers, or "PRs by type". Triggers on: "pr kpis", "delivery metrics", "pr throughput", "cycle time report", "prs by type".
 ---
 
 # PR Insights — Delivery KPIs
@@ -12,7 +12,7 @@ dataset.
 ## Input — a fetch run directory
 
 - **If given a run-dir path** (e.g. by the `/prs-insights` orchestrator), use it directly.
-- **If invoked standalone without one**, first run the `prs-insights-fetch` skill (parsing the
+- **If invoked standalone without one**, first run the `prs.fetch` skill (parsing the
   same `users` / `time-period` params) to produce the dataset, then continue.
 
 Read `manifest.json` for the window/scope, then the files you need: **`pulls.json`** (all

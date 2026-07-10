@@ -1,5 +1,5 @@
 ---
-name: prs-insights-fetch
+name: prs.fetch
 description: Collect and persist a PR review dataset for the cxnch-platform repo — fetches pull requests over a time window (metadata, files, reviews, review comments, issue comments) via the GitHub CLI, applies deterministic enrichment (PR type/stack, comment layer, bot/self-reply exclusion flags), and writes a reusable run directory plus a manifest. Data only — it does NOT generate any report; the prs-insights-* report skills and the /prs-insights command consume its output. Use when you need the raw classified PR dataset, or as the first step before any PR report. Triggers on: "fetch pr data", "collect pr dataset", "prs-insights fetch", "get pr review data".
 ---
 
@@ -39,7 +39,7 @@ It handles date math, author-OR filtering, pagination, parallel per-PR fetching,
 deterministic enrichment — and avoids the zsh word-split gotcha:
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/skills/prs-insights-fetch/scripts/fetch-pr-data.sh" \
+bash "${CLAUDE_PLUGIN_ROOT}/skills/prs.fetch/scripts/fetch-pr-data.sh" \
   --out "<scratch>/prs-insights/<since>_to_<until>_team" --days 7        # all users, 7 days
 # or:  --users "hiagoradd,fidsouzarv"  --since 2026-06-01
 ```
@@ -70,6 +70,6 @@ counts). Do not print the dataset contents or generate a report.
 - **Read-only on the codebase.** The only thing written is the run directory under the scratch
   dir. It never modifies source or opens PRs.
 - **Deterministic only.** It does *not* classify theme or severity — those are judgment calls
-  the `prs-insights-dev` report makes on demand.
+  the `prs-report.dev` report makes on demand.
 - The window filters by PR **creation** date; a PR created earlier but reviewed in-window won't
   appear unless `--since` is widened.

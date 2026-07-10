@@ -1,6 +1,6 @@
 ---
-name: prs-insights-dev
-description: Generate the Developer Coaching report for the cxnch-platform repo — the "what does the team keep getting wrong in review, and how do we stop it" report. Classifies every actionable review comment by theme and severity, builds a theme × PR-type matrix, clusters recurring feedback into systemic patterns, and maps each to the cheapest reinforcement (lint/CI rule, an existing .claude/rule that isn't landing, a new rule, or a PR-template gate) with a concrete file+text proposal. Reads a prs-insights-fetch run directory (or fetches one if not given). Use when asked for recurring review comments, systemic patterns, reinforcement recommendations, or coaching insights. Triggers on: "developer coaching", "recurring review comments", "systemic patterns", "reinforcement recommendations", "what are we getting wrong in reviews".
+name: prs-report.dev
+description: Generate the Developer Coaching report for the cxnch-platform repo — the "what does the team keep getting wrong in review, and how do we stop it" report. Classifies every actionable review comment by theme and severity, builds a theme × PR-type matrix, clusters recurring feedback into systemic patterns, and maps each to the cheapest reinforcement (lint/CI rule, an existing .claude/rule that isn't landing, a new rule, or a PR-template gate) with a concrete file+text proposal. Reads a prs.fetch run directory (or fetches one if not given). Use when asked for recurring review comments, systemic patterns, reinforcement recommendations, or coaching insights. Triggers on: "developer coaching", "recurring review comments", "systemic patterns", "reinforcement recommendations", "what are we getting wrong in reviews".
 ---
 
 # PR Insights — Developer Coaching
@@ -12,7 +12,7 @@ turn them into reinforcements so the same feedback stops recurring. This is the 
 ## Input — a fetch run directory
 
 - **If given a run-dir path** (e.g. by the `/prs-insights` orchestrator), use it directly.
-- **If invoked standalone without one**, first run the `prs-insights-fetch` skill (parsing the
+- **If invoked standalone without one**, first run the `prs.fetch` skill (parsing the
   same `users` / `time-period` params), then continue.
 
 Read `manifest.json` (window/scope), **`review-comments.ndjson`** and

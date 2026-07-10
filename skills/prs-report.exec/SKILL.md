@@ -1,6 +1,6 @@
 ---
-name: prs-insights-exec
-description: Generate the Executive Summary report for the cxnch-platform repo — a one-page, non-technical health snapshot of PR delivery for a PM or team lead: throughput, merge health, the single biggest risk to watch, and one concrete recommendation. A digest, in plain language, with no code jargon. Computes its own top-line from the dataset (independent of the other reports, so it can run in parallel). Reads a prs-insights-fetch run directory (or fetches one if not given). Use when asked for an executive summary, a PM/leadership PR digest, or a high-level review health snapshot. Triggers on: "executive summary", "pr digest for leadership", "pm summary", "high-level pr health".
+name: prs-report.exec
+description: Generate the Executive Summary report for the cxnch-platform repo — a one-page, non-technical health snapshot of PR delivery for a PM or team lead: throughput, merge health, the single biggest risk to watch, and one concrete recommendation. A digest, in plain language, with no code jargon. Computes its own top-line from the dataset (independent of the other reports, so it can run in parallel). Reads a prs.fetch run directory (or fetches one if not given). Use when asked for an executive summary, a PM/leadership PR digest, or a high-level review health snapshot. Triggers on: "executive summary", "pr digest for leadership", "pm summary", "high-level pr health".
 ---
 
 # PR Insights — Executive Summary
@@ -11,7 +11,7 @@ just delivery health, the top risk, and one recommendation.
 ## Input — a fetch run directory
 
 - **If given a run-dir path** (e.g. by the `/prs-insights` orchestrator), use it directly.
-- **If invoked standalone without one**, first run the `prs-insights-fetch` skill (parsing the
+- **If invoked standalone without one**, first run the `prs.fetch` skill (parsing the
   same `users` / `time-period` params), then continue.
 
 **Independence (deliberate):** this report is computed **directly from the dataset**, not by

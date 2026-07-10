@@ -1,6 +1,6 @@
 {
   "name": "git-insights-toolkit",
-  "description": "PR-analytics toolkit: fetches a GitHub PR dataset once, then generates delivery KPIs, review-collaboration, developer-coaching, and executive-summary reports.",
+  "description": "Git analytics for Claude Code, starting with PR insights: fetches a repo's PR history once, then generates delivery KPIs, review-collaboration, developer-coaching, and executive-summary reports. Built to expand to more Git analytics over time.",
   "version": "1.0.0",
   "author": {
     "name": "hiagoradd"

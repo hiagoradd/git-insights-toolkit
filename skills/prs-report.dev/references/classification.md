@@ -1,7 +1,7 @@
-# Classification rubric (judgment) — prs-insights-dev
+# Classification rubric (judgment) — prs-report.dev
 
 The deterministic layers (PR type, comment layer, bot/self-reply exclusion) are already applied
-by `prs-insights-fetch` and present on the dataset rows. This file holds the **judgment** layers
+by `prs.fetch` and present on the dataset rows. This file holds the **judgment** layers
 the developer-coaching report assigns per comment — always from these fixed enums, never invent
 categories, so counts stay comparable across runs.
 

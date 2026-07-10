@@ -2,7 +2,7 @@
 name: prs-insights
 description: >
   Orchestrate a full PR review-insights run for the cxnch-platform repo. Fetches the PR dataset
-  once (prs-insights-fetch), then fans out specialized report generators in parallel — Delivery
+  once (prs.fetch), then fans out specialized report generators in parallel — Delivery
   KPIs, Review Collaboration, Developer Coaching, and Executive Summary — each writing its own
   markdown file, and presents the paths + headlines. Team-wide over the last 7 days by default.
 metadata:
@@ -27,7 +27,7 @@ only paths + short summaries — never the raw dataset or the full report bodies
 
 ## Step 1 — Fetch once
 
-Invoke the **`prs-insights-fetch`** skill with the parsed `users` / `time-period`. Capture the
+Invoke the **`prs.fetch`** skill with the parsed `users` / `time-period`. Capture the
 **run-dir path** and the **one-line manifest summary** it returns. Do **not** read the dataset
 files yourself — the report subagents do that.
 
@@ -39,17 +39,17 @@ conventions (stable run dir, enrichment, manifest) are honored.
 For each selected report, spawn **one subagent** with the **Agent** tool. Issue all the Agent
 calls **in a single message** so they run concurrently. Give each subagent this prompt shape:
 
-> Follow the **`<skill-name>`** skill to generate its report. The `prs-insights-fetch` run
+> Follow the **`<skill-name>`** skill to generate its report. The `prs.fetch` run
 > directory already exists at **`<run-dir-path>`** — use it directly, do not refetch. Manifest:
 > `<one-line manifest summary>`. Write the report file as the skill specifies and **return only**
 > the file path plus a 3–5 line headline summary — not the full report body.
 
 | Report | Skill | Reads |
 |---|---|---|
-| Delivery KPIs | `prs-insights-kpis` | `pulls.json`, `reviews.ndjson` |
-| Review Collaboration | `prs-insights-collab` | `reviews.ndjson`, `pulls.json` |
-| Developer Coaching | `prs-insights-dev` | comments + `pulls.json` (classifies theme/severity) |
-| Executive Summary | `prs-insights-exec` | `manifest.json` + light `pulls.json` pass |
+| Delivery KPIs | `prs-report.kpis` | `pulls.json`, `reviews.ndjson` |
+| Review Collaboration | `prs-report.collab` | `reviews.ndjson`, `pulls.json` |
+| Developer Coaching | `prs-report.dev` | comments + `pulls.json` (classifies theme/severity) |
+| Executive Summary | `prs-report.exec` | `manifest.json` + light `pulls.json` pass |
 
 All four are independent — the exec summary computes its own top-line and does **not** depend on
 the sibling reports' output, so parallel fan-out is safe.
@@ -67,6 +67,6 @@ final message; link the files.
 
 ## Notes
 
-- If `prs-insights-fetch` errors, surface it and stop — check `gh auth status` first.
+- If `prs.fetch` errors, surface it and stop — check `gh auth status` first.
 - If the user asked for a subset of reports, spawn only those subagents.
 - If a subagent fails, report which one and keep the others' results.

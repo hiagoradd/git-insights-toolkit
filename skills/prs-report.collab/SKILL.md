@@ -1,6 +1,6 @@
 ---
-name: prs-insights-collab
-description: Generate the Review Collaboration report for the cxnch-platform repo — the people/process view of code review over a window of PRs: reviewer-load concentration, a who-reviews-whom matrix, time-to-first-review responsiveness, PRs merged without peer review, bottlenecks, and bus-factor risk. Surfaces "one person does most of the reviews" and review silos. Reads a prs-insights-fetch run directory (or fetches one if not given). Use when asked about reviewer load, review balance, who reviews whom, review latency, or bus factor. Triggers on: "review collaboration", "reviewer load", "who reviews whom", "review bottlenecks", "bus factor", "review balance".
+name: prs-report.collab
+description: Generate the Review Collaboration report for the cxnch-platform repo — the people/process view of code review over a window of PRs: reviewer-load concentration, a who-reviews-whom matrix, time-to-first-review responsiveness, PRs merged without peer review, bottlenecks, and bus-factor risk. Surfaces "one person does most of the reviews" and review silos. Reads a prs.fetch run directory (or fetches one if not given). Use when asked about reviewer load, review balance, who reviews whom, review latency, or bus factor. Triggers on: "review collaboration", "reviewer load", "who reviews whom", "review bottlenecks", "bus factor", "review balance".
 ---
 
 # PR Insights — Review Collaboration
@@ -11,7 +11,7 @@ failure are. Deterministic off the dataset — **no theme/severity judgment**.
 ## Input — a fetch run directory
 
 - **If given a run-dir path** (e.g. by the `/prs-insights` orchestrator), use it directly.
-- **If invoked standalone without one**, first run the `prs-insights-fetch` skill (parsing the
+- **If invoked standalone without one**, first run the `prs.fetch` skill (parsing the
   same `users` / `time-period` params), then continue.
 
 Read `manifest.json` (window/scope), **`reviews.ndjson`** (submissions: `user`, `state`,

@@ -1,8 +1,8 @@
-# Deterministic taxonomy — prs-insights-fetch
+# Deterministic taxonomy — prs.fetch
 
 These are the **mechanical** classification rules the fetch script applies (zero LLM), so
 every report consumes the same, comparable derived fields. The judgment layers
-(theme/severity/actionability/resolution) live in the `prs-insights-dev` skill and are **not**
+(theme/severity/actionability/resolution) live in the `prs-report.dev` skill and are **not**
 applied here.
 
 ## PR type (`type` on each `pulls.json` row — single primary value)
@@ -44,7 +44,7 @@ layer for them infers it from text itself (that inference is judgment, not done 
 - `is_self_reply` — `user` equals the PR author (used only to derive `resolution` downstream).
 - `excluded` — `is_bot OR is_self_reply`. Reports must drop `excluded` rows from all comment
   counts. Bare praise / "LGTM" is **not** excluded here (it needs content judgment) — the
-  `prs-insights-dev` skill tallies that separately.
+  `prs-report.dev` skill tallies that separately.
 
 ## Normalization rule (for every report)
 

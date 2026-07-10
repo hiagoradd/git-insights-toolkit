@@ -1,5 +1,6 @@
 {
   "name": "git-insights-toolkit",
+  "description": "Git analytics plugins for Claude Code.",
   "owner": {
     "name": "hiagoradd"
   },
@@ -7,7 +8,7 @@
     {
       "name": "git-insights-toolkit",
       "source": "./",
-      "description": "PR-analytics toolkit: fetch a GitHub PR dataset once, then generate delivery KPIs, review-collaboration, developer-coaching, and executive-summary reports."
+      "description": "Git analytics for Claude Code, starting with PR insights: fetch a repo's PR history once, then generate delivery KPIs, review-collaboration, developer-coaching, and executive-summary reports. Built to expand to more Git analytics over time."
     }
   ]
 }
