@@ -39,7 +39,7 @@ It handles date math, author-OR filtering, pagination, parallel per-PR fetching,
 deterministic enrichment — and avoids the zsh word-split gotcha:
 
 ```bash
-bash .claude/skills/prs-insights-fetch/scripts/fetch-pr-data.sh \
+bash "${CLAUDE_PLUGIN_ROOT}/skills/prs-insights-fetch/scripts/fetch-pr-data.sh" \
   --out "<scratch>/prs-insights/<since>_to_<until>_team" --days 7        # all users, 7 days
 # or:  --users "hiagoradd,fidsouzarv"  --since 2026-06-01
 ```

@@ -1,0 +1,13 @@
+{
+  "name": "git-insights-toolkit",
+  "owner": {
+    "name": "hiagoradd"
+  },
+  "plugins": [
+    {
+      "name": "git-insights-toolkit",
+      "source": "./",
+      "description": "PR-analytics toolkit: fetch a GitHub PR dataset once, then generate delivery KPIs, review-collaboration, developer-coaching, and executive-summary reports."
+    }
+  ]
+}

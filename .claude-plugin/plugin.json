@@ -1,0 +1,11 @@
+{
+  "name": "git-insights-toolkit",
+  "description": "PR-analytics toolkit: fetches a GitHub PR dataset once, then generates delivery KPIs, review-collaboration, developer-coaching, and executive-summary reports.",
+  "version": "1.0.0",
+  "author": {
+    "name": "hiagoradd"
+  },
+  "homepage": "https://github.com/hiagoradd/git-insights-toolkit",
+  "repository": "https://github.com/hiagoradd/git-insights-toolkit",
+  "license": "MIT"
+}
