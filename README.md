@@ -77,9 +77,25 @@ The **fetch** step (`prs.fetch`) is the shared data producer: it pulls PR metada
 
 ## Adapting to your repo layout
 
-PR/comment **labels** (classifying a PR as front-end / back-end / full-stack / e2e-testing, and tagging which layer a comment touches) are inferred from file **paths**. The default path rules are tuned for a monorepo laid out as `apps/web`, `apps/api`, `packages/`, with Prisma migrations under `packages/database/prisma/migrations/` and tests under `apps/web/e2e/` and `*.spec.ts`.
+PR/comment **labels** (classifying a PR as front-end / back-end / full-stack / e2e-testing, and tagging which layer a comment touches) are inferred from file **paths** using a small **layout config** — an ordered list of path-pattern rules. The bundled default (`skills/prs.fetch/references/layouts/monorepo.json`) is tuned for a monorepo laid out as `apps/web`, `apps/api`, `packages/`, with Prisma migrations under `packages/database/prisma/migrations/` and tests as `*.spec.ts` / `apps/web/e2e/`.
 
-Against a repo with a different layout, the toolkit still runs and every quantitative metric (volume, cycle time, reviewer load, etc.) is fully accurate — only the type/layer *labels* degrade to `misc`/unclassified. To adapt it, edit the `jq` classification blocks in `skills/prs.fetch/scripts/fetch-pr-data.sh` and the matching rules in `skills/prs.fetch/references/taxonomy.md`.
+Against a repo with a different layout, the toolkit still runs and every quantitative metric (volume, cycle time, reviewer load, etc.) is fully accurate — only the type/layer *labels* degrade to `misc`/unclassified. To fix the labels, **drop a `.prs-insights.json` in your repo root** (no code editing):
+
+```jsonc
+{
+  "name": "my-app",
+  "rules": [
+    { "match": ["(^|/)(test|tests|__tests__)/", "\\.(test|spec)\\.[jt]sx?$"], "role": "test", "layer": "test" },
+    { "match": ["(^|/)migrations/"], "role": "backend", "layer": "migration", "sublabel": "migration" },
+    { "match": ["^(src|client|web|frontend)/"], "role": "frontend", "layer": "FE" },
+    { "match": ["^(server|api|backend|lib)/"], "role": "backend", "layer": "BE" }
+  ]
+}
+```
+
+Each file/comment path is classified by the **first** rule whose `match` regex hits it, so list the most specific rules first. `role` (`frontend`/`backend`/`test`/`none`) drives the PR type; `layer` labels comments; `sublabel` is optional. A ready-to-copy starter lives at `skills/prs.fetch/references/layouts/flat.json`.
+
+The config is discovered from `.prs-insights.json` in the current directory, or pass `--layout path/to/config.json` explicitly. The chosen layout name is recorded in each run's `manifest.json`.
 
 ## Notes & limitations
 

@@ -44,9 +44,13 @@ own.
 - **`--since YYYY-MM-DD` / `--days N`** — the window. Accept "last 30 days", "last 2 weeks", etc.
   Default: last 7 days.
 - **`--repo owner/name`** — target repo. Default: the fetch script's default.
+- **`--layout <path>`** — path-classification config for PR `type` / comment `layer`. Default:
+  a `.prs-insights.json` in the working dir, else the bundled monorepo layout. See
+  `docs/custom-reports.md` / `skills/prs.fetch/references/taxonomy.md`.
 
-`--users`, `--since`/`--days`, and `--repo` are passed through to `prs.fetch` unchanged; they are
-ignored when `--run-dir` is given (the run dir's `manifest.json` already fixes the window/scope).
+`--users`, `--since`/`--days`, `--repo`, and `--layout` are passed through to `prs.fetch`
+unchanged; they are ignored when `--run-dir` is given (the run dir's `manifest.json` already fixes
+the window/scope/layout).
 
 ## Step 1 — Get the dataset
 

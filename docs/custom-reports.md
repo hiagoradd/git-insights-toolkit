@@ -41,6 +41,7 @@ with no run dir, run `prs.fetch` first, then proceed.
   "until": "YYYY-MM-DD",
   "scope": "team",
   "users": ["…"],
+  "layout": "monorepo (apps/* + packages/*)",
   "pr_count": 42,
   "files": {
     "pulls.json":             { "rows": 42, "note": "PR metadata; enriched with type + sublabels[]" },
@@ -62,9 +63,11 @@ with no run dir, run `prs.fetch` first, then proceed.
 
 All enrichment is **mechanical / zero-LLM**, defined in
 `skills/prs.fetch/references/taxonomy.md`. `type` and `layer` are inferred from file **paths**,
-not titles — so they assume a specific monorepo layout (`apps/web`, `apps/api`, `packages/`,
-`packages/database/prisma/migrations/`, `apps/web/e2e/`, `*.spec.ts`). Against a different layout
-they degrade to `misc` / `null` (quantitative fields are unaffected).
+not titles, via a **layout config** (bundled default `monorepo.json`, or a repo-local
+`.prs-insights.json` / `--layout`). The default assumes a monorepo (`apps/web`, `apps/api`,
+`packages/`, …); against a different layout the labels degrade to `misc` / `null` (quantitative
+fields are unaffected) until you supply a matching config. `manifest.json.layout` records which
+config produced the run.
 
 ### Two consumption rules (every report must follow)
 

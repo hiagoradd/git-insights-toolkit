@@ -5,35 +5,61 @@ every report consumes the same, comparable derived fields. The judgment layers
 (theme/severity/actionability/resolution) live in the `prs-report.dev` skill and are **not**
 applied here.
 
+## The layout config drives path classification
+
+Both derived path fields — a PR's `type` and a comment's `layer` — come from a **layout config**:
+an ordered list of `rules`, each mapping path patterns to a `role`, a `layer`, and an optional
+`sublabel`. The script resolves the config in this order:
+
+1. `--layout <path>` if passed;
+2. a `.prs-insights.json` in the current working directory (run from your repo root);
+3. the bundled default `references/layouts/monorepo.json` (documented below).
+
+Each rule looks like:
+
+```json
+{ "match": ["^apps/web/"], "role": "frontend", "layer": "FE" }
+```
+
+- `match` — an array of regexes tested against each file/comment path.
+- `role` — `frontend` / `backend` / `test` / `none`; feeds the PR-`type` derivation.
+- `layer` — the comment-`layer` value emitted for a matching path.
+- `sublabel` (optional) — added to a PR's `sublabels[]` when a matching file is touched.
+
+**A path is classified by the FIRST rule (in list order) whose `match` hits it**, so ordering is
+precedence — put the most specific rules (tests, migrations) before the general app/package ones.
+
+To adapt to a different repo layout, copy `references/layouts/flat.json` to `.prs-insights.json`
+in your repo and edit the patterns. Only these path labels change; every quantitative metric is
+independent of the layout.
+
 ## PR type (`type` on each `pulls.json` row — single primary value)
 
-Classified from `files[]`. Paths win; the conventional-commit scope in the title
-(`feat(web)`, `fix(api)`, `chore(deps)`, `test(e2e)`) only corroborates.
+Derived from `files[]`. Each file resolves to its first matching rule's `role`; the set of roles
+across all files (ignoring `none`) then maps to one primary `type`. Paths win; the
+conventional-commit title scope (`feat(web)`, `fix(api)`) is only corroboration.
 
 | Type | Rule |
 |---|---|
-| `front-end` | touches `apps/web/**` source, and no `apps/api`/`packages` source |
-| `back-end` | touches `apps/api/**` or `packages/**` source, and no `apps/web` source |
-| `full-stack` | touches `apps/web` **and** (`apps/api` or `packages`) source |
-| `e2e-testing` | only `apps/web/e2e/**`, Playwright `*.spec.ts`, or `apps/api/test/integration/**` touched (no other product source) |
-| `misc` | no product `src/**` touched — only `.github/**`, `infra/**`, root config, `docker/**`, `pnpm-lock.yaml`, docs; or author is `dependabot[bot]` |
+| `full-stack` | files hit **both** a `frontend` role and a `backend` role |
+| `front-end` | at least one `frontend` role, no `backend` |
+| `back-end` | at least one `backend` role, no `frontend` |
+| `e2e-testing` | only `test` roles touched (no `frontend`/`backend` source) |
+| `misc` | no classified role (only `none`/unmatched paths); or author is `dependabot[bot]` |
 
-`sublabels[]` carries `migration` when `packages/database/prisma/migrations/**` is touched
-(does not change the primary `type`).
+`sublabels[]` carries every `sublabel` from matched rules (e.g. `migration` in the default
+config) — it does not change the primary `type`.
+
+With the default `monorepo.json`, this reproduces the toolkit's original classification, with one
+deliberate consistency fix: a PR touching **only** test files (e.g. a lone `*.spec.ts`) is
+`e2e-testing` regardless of where the test lives (previously a backend-side unit-test-only PR was
+labelled `back-end`).
 
 ## Comment layer (`layer` on each `review-comments.ndjson` row)
 
-Inline comments carry a `path`, so the layer is mechanical:
-
-| Path prefix | `layer` |
-|---|---|
-| `apps/web/e2e/`, `*.spec.ts`, `apps/api/test/integration/` | `test` |
-| `packages/database/prisma/migrations/` | `migration` |
-| `apps/web/` | `FE` |
-| `apps/api/`, `packages/` | `BE` |
-| `docs/` | `docs` |
-| `infra/`, `.github/`, `docker/` | `infra` |
-| (no path / unmatched) | `null` |
+Inline comments carry a `path`, so the layer is mechanical: it is the `layer` of the first layout
+rule whose `match` hits the path, or `null` if none match (or there is no path). With the default
+`monorepo.json` the layers are `test` / `migration` / `FE` / `BE` / `docs` / `infra` / `null`.
 
 `issue-comments.ndjson` rows have no `path`, so `layer` is left unset — a report that needs a
 layer for them infers it from text itself (that inference is judgment, not done here).

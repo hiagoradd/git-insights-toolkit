@@ -1,0 +1,12 @@
+{
+  "name": "flat (src/ + server/)",
+  "description": "Example starter layout for a non-monorepo repo: frontend under src/, backend under server/ or api/, tests as *.test.* / *.spec.* / a test|tests directory, DB migrations under a migrations/ directory. Copy this to .prs-insights.json in your repo and edit the patterns to match your tree.",
+  "rules": [
+    { "match": ["(^|/)(test|tests|__tests__)/", "\\.(test|spec)\\.[jt]sx?$"], "role": "test", "layer": "test" },
+    { "match": ["(^|/)migrations/"], "role": "backend", "layer": "migration", "sublabel": "migration" },
+    { "match": ["^(src|app|client|web|frontend)/"], "role": "frontend", "layer": "FE" },
+    { "match": ["^(server|api|backend|lib|packages)/"], "role": "backend", "layer": "BE" },
+    { "match": ["^docs?/"], "role": "none", "layer": "docs" },
+    { "match": ["^(infra|deploy|\\.github|docker)/", "(^|/)Dockerfile$"], "role": "none", "layer": "infra" }
+  ]
+}

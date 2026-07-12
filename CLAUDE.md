@@ -20,13 +20,13 @@ Everything runs *inside Claude Code*, not from a shell. The customizable entry p
 /git-insights-toolkit:prs-coaching --users hiagoradd            # preset: dev report only
 ```
 
-`/prs-insights` params (all optional): `--reports <list|all>` · `--ask "<prompt>"` · `--fetch-only` · `--run-dir <path>` · `--users` · `--since`/`--days` · `--repo`. See `commands/prs-insights.md`.
+`/prs-insights` params (all optional): `--reports <list|all>` · `--ask "<prompt>"` · `--fetch-only` · `--run-dir <path>` · `--users` · `--since`/`--days` · `--repo` · `--layout <config>`. See `commands/prs-insights.md`.
 
 The fetch script can be run directly for debugging the data layer:
 
 ```bash
 bash skills/prs.fetch/scripts/fetch-pr-data.sh \
-  --out <dir> [--users "a,b"] [--since YYYY-MM-DD | --days N] [--repo owner/name]
+  --out <dir> [--users "a,b"] [--since YYYY-MM-DD | --days N] [--repo owner/name] [--layout <config.json>]
 ```
 
 **Hard dependency:** `gh` authenticated with `repo` scope. Also requires `jq`. If anything fails, check `gh auth status` first. In skill/command context the plugin root is `${CLAUDE_PLUGIN_ROOT}`.
@@ -62,15 +62,14 @@ Outputs: `pulls.json` (enriched with `type` + `sublabels[]`), `reviews.ndjson` (
 ### Enrichment rules (fetch-pr-data.sh)
 
 All mechanical, defined in `skills/prs.fetch/references/taxonomy.md` and encoded in the `jq` blocks of the script:
-- **PR `type`** (front-end / back-end / full-stack / e2e-testing / misc) is inferred from `files[]` **paths**, not the title. `sublabels[]` gets `migration` for Prisma migration paths.
-- **comment `layer`** (FE / BE / test / migration / docs / infra) is inferred from the comment's file path.
+- **PR `type`** and **comment `layer`** are inferred from `files[]`/comment **paths** (not titles) via a **layout config** — an ordered list of path-pattern rules resolved as `--layout <path>` → repo-local `.prs-insights.json` → bundled `references/layouts/monorepo.json` (the default, which reproduces the original built-in behavior). Each path takes the first matching rule's `role` (→ PR `type`: front-end / back-end / full-stack / e2e-testing / misc) and `layer` (FE / BE / test / migration / docs / infra); `sublabel` (e.g. `migration`) is appended to `sublabels[]`.
 - **`excluded` = is_bot OR is_self_reply** — bots (`*[bot]` logins) and PR-author self-replies are flagged so reports can drop them.
 
 The **`dev`** skill is the only one that does LLM classification (theme/severity of review feedback) — see `skills/prs-report.dev/references/classification.md` for the fixed theme/severity enums and the "recurring ≥3× → cheapest enforcement" mapping. Every report fills in its own `assets/report-template.md` and writes to `reports/prs-insights/<since>_to_<until>_<scope>_<name>.md`.
 
 ## Conventions & gotchas
 
-- **Path-based enrichment is tuned to one monorepo layout** (the one the toolkit was first built against). Enrichment keys off `apps/web`, `apps/api`, `packages/`, `packages/database/prisma/migrations/`, `apps/web/e2e/`, `*.spec.ts`. Against a differently-laid-out repo every quantitative metric is still accurate; only the `type`/`layer` labels degrade to `misc`/`null`. See "Adapting to your repo layout" in the README.
+- **Path-based enrichment is layout-configurable.** The bundled default (`skills/prs.fetch/references/layouts/monorepo.json`) is tuned to one monorepo layout (`apps/web`, `apps/api`, `packages/`, …). On a different layout, supply a repo-local `.prs-insights.json` (or `--layout`); without one, every quantitative metric is still accurate and only the `type`/`layer` labels degrade to `misc`/`null`. See "Adapting to your repo layout" in the README and `references/layouts/flat.json` for a starter.
 - **The window filters by PR *creation* date only.** A PR created before `--since` but reviewed in-window will be missed unless you widen `--since`.
 - `gh search prs --limit 200` caps results; per-PR fetches run under `xargs -P 10` and swallow individual errors (`|| true`), so a partial dataset fails soft rather than aborting.
 - The fetch script targets **portable Bash** (`set -euo pipefail`, GNU-then-BSD `date` fallback). Preserve that when editing.
@@ -78,7 +77,7 @@ The **`dev`** skill is the only one that does LLM classification (theme/severity
 
 ## Editing skills & commands
 
-Each skill lives under `skills/<name>/` with a `SKILL.md` (frontmatter `name` + `description` that governs when it triggers) and, where relevant, `assets/` (report templates) and `references/` (taxonomy/classification rules the skill reads at runtime). Commands live under `commands/<name>.md`. When changing the data schema in `fetch-pr-data.sh`, update `references/taxonomy.md`, the `manifest.json` file notes, the `docs/custom-reports.md` contract, and any consuming report skill together — they are coupled by field names.
+Each skill lives under `skills/<name>/` with a `SKILL.md` (frontmatter `name` + `description` that governs when it triggers) and, where relevant, `assets/` (report templates) and `references/` (taxonomy/classification rules the skill reads at runtime). Commands live under `commands/<name>.md`. When changing the data schema in `fetch-pr-data.sh`, update `references/taxonomy.md`, the `manifest.json` file notes, the `docs/custom-reports.md` contract, and any consuming report skill together — they are coupled by field names. The path-classification rules live in the layout config (`references/layouts/*.json`), **not** hardcoded in the script — edit or add a config there rather than the `jq` blocks.
 
 ### Adding a report (the extension point)
 

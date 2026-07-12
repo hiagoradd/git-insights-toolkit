@@ -1,0 +1,12 @@
+{
+  "name": "monorepo (apps/* + packages/*)",
+  "description": "Default layout. A monorepo with a web app under apps/web, an API under apps/api, shared code under packages/, Prisma migrations under packages/database/prisma/migrations, and tests as *.spec.ts / apps/web/e2e / apps/api/test/integration. This reproduces the toolkit's original built-in classification.",
+  "rules": [
+    { "match": ["^apps/web/e2e/", "\\.spec\\.ts$", "^apps/api/test/integration/"], "role": "test", "layer": "test" },
+    { "match": ["^packages/database/prisma/migrations/"], "role": "backend", "layer": "migration", "sublabel": "migration" },
+    { "match": ["^apps/web/"], "role": "frontend", "layer": "FE" },
+    { "match": ["^apps/api/", "^packages/"], "role": "backend", "layer": "BE" },
+    { "match": ["^docs/"], "role": "none", "layer": "docs" },
+    { "match": ["^(infra/|\\.github/|docker/)"], "role": "none", "layer": "infra" }
+  ]
+}

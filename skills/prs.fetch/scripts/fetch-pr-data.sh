@@ -4,7 +4,7 @@
 # judgment work (theme/severity). Never touches source; the only output is the run dir.
 #
 # Usage:
-#   fetch-pr-data.sh --out <dir> [--users "a,b,c"] [--since YYYY-MM-DD] [--days N] [--repo owner/name]
+#   fetch-pr-data.sh --out <dir> [--users "a,b,c"] [--since YYYY-MM-DD] [--days N] [--repo owner/name] [--layout <path>]
 #
 # Defaults: all users, last 7 days, repo = current gh default repo.
 # Writes into <dir>: pulls.json (enriched: type, sublabels), reviews.ndjson (is_bot),
@@ -12,20 +12,40 @@
 #   issue-comments.ndjson (is_bot, is_self_reply, excluded), manifest.json
 set -euo pipefail
 
-OUT=""; USERS=""; SINCE=""; DAYS="7"; REPO=""
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+OUT=""; USERS=""; SINCE=""; DAYS="7"; REPO=""; LAYOUT=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    --out)   OUT="$2"; shift 2;;
-    --users) USERS="$2"; shift 2;;
-    --since) SINCE="$2"; shift 2;;
-    --days)  DAYS="$2"; shift 2;;
-    --repo)  REPO="$2"; shift 2;;
+    --out)    OUT="$2"; shift 2;;
+    --users)  USERS="$2"; shift 2;;
+    --since)  SINCE="$2"; shift 2;;
+    --days)   DAYS="$2"; shift 2;;
+    --repo)   REPO="$2"; shift 2;;
+    --layout) LAYOUT="$2"; shift 2;;
     *) echo "unknown arg: $1" >&2; exit 2;;
   esac
 done
 
 [ -n "$OUT" ] || { echo "--out <dir> is required" >&2; exit 2; }
 mkdir -p "$OUT"
+
+# Resolve the layout config that drives path-based type/layer classification:
+#   1) explicit --layout <path>
+#   2) a .prs-insights.json in the current working directory (run from your repo root)
+#   3) the bundled monorepo default (reproduces the toolkit's original behavior)
+if [ -z "$LAYOUT" ]; then
+  if [ -f "./.prs-insights.json" ]; then
+    LAYOUT="./.prs-insights.json"
+  else
+    LAYOUT="$SCRIPT_DIR/../references/layouts/monorepo.json"
+  fi
+fi
+[ -f "$LAYOUT" ] || { echo "layout config not found: $LAYOUT" >&2; exit 2; }
+LAYOUT_JSON="$(cat "$LAYOUT")"
+jq -e '.rules and (.rules|type=="array")' >/dev/null 2>&1 <<<"$LAYOUT_JSON" \
+  || { echo "layout config $LAYOUT has no .rules[] array" >&2; exit 2; }
+LAYOUT_NAME="$(jq -r '.name // "custom"' <<<"$LAYOUT_JSON")"
 
 # Portable "N days ago" (GNU date, then BSD/macOS date).
 if [ -z "$SINCE" ]; then
@@ -54,7 +74,7 @@ if [ -n "$USERS" ]; then
   done
 fi
 
-echo "repo=$REPO since=$SINCE until=$UNTIL scope=$SCOPE users=${USERS:-<all>}" >&2
+echo "repo=$REPO since=$SINCE until=$UNTIL scope=$SCOPE users=${USERS:-<all>} layout=$LAYOUT_NAME" >&2
 
 # 1) PR numbers in window (by creation date).
 NUMBERS="$(gh search prs --repo "$REPO" --created ">=$SINCE" "${AUTHOR_ARGS[@]}" \
@@ -101,24 +121,26 @@ rm -rf "$PARTS"
 # See references/taxonomy.md for the rules encoded below.
 
 # 3) PR type + sublabels from files[]. Paths win (title scope is only corroboration).
-jq '
+# Each file maps to the FIRST layout rule whose .match[] regex hits it; that rule's
+# .role (frontend/backend/test/none) and optional .sublabel drive the primary type.
+jq --argjson layout "$LAYOUT_JSON" '
+  ($layout.rules) as $rules
+  # first matching rule for a path (null if none match)
+  | def matched($path): $rules | map(select(.match | map(. as $re | $path|test($re)) | any)) | .[0];
   map(
     . as $p
     | (($p.files // [])) as $f
-    | ([$f[] | select(test("^apps/web/e2e/") or test("\\.spec\\.ts$") or test("^apps/api/test/integration/"))] | length) as $e2e
-    | ([$f[] | select(test("^apps/web/") and (test("^apps/web/e2e/")|not) and (test("\\.spec\\.ts$")|not))] | length) as $web
-    | ([$f[] | select(test("^apps/api/") and (test("^apps/api/test/integration/")|not))] | length) as $api
-    | ([$f[] | select(test("^packages/"))] | length) as $pkg
-    | ([$f[] | select(test("^packages/database/prisma/migrations/"))] | length) as $mig
+    | ([$f[] | matched(.) | select(. != null)]) as $hits
+    | ([$hits[].role] | map(select(. != "none")) | unique) as $roles
+    | ([$hits[] | select(.sublabel != null) | .sublabel] | unique) as $subs
     | ($p.user == "dependabot[bot]") as $bot
     | (if $bot then "misc"
-       elif ($web==0 and $api==0 and $pkg==0 and $e2e==0) then "misc"
-       elif ($web==0 and $api==0 and $pkg==0 and $e2e>0) then "e2e-testing"
-       elif ($web>0 and ($api>0 or $pkg>0)) then "full-stack"
-       elif ($web>0) then "front-end"
-       elif ($api>0 or $pkg>0) then "back-end"
+       elif (($roles | index("frontend")) and ($roles | index("backend"))) then "full-stack"
+       elif ($roles | index("frontend")) then "front-end"
+       elif ($roles | index("backend")) then "back-end"
+       elif ($roles | index("test")) then "e2e-testing"
        else "misc" end) as $type
-    | $p + {type: $type, sublabels: (if $mig>0 then ["migration"] else [] end)}
+    | $p + {type: $type, sublabels: $subs}
   )
 ' "$OUT/pulls.raw.json" > "$OUT/pulls.json"
 
@@ -126,20 +148,16 @@ jq '
 AUTHORS="$(jq -c 'map({key:(.number|tostring), value:.user}) | from_entries' "$OUT/pulls.json")"
 
 # 4) Review comments: is_bot, is_self_reply, excluded, layer (from path).
-jq -c --argjson authors "$AUTHORS" '
+# layer = the .layer of the first matching layout rule (same rules as PR type above).
+jq -c --argjson authors "$AUTHORS" --argjson layout "$LAYOUT_JSON" '
+  ($layout.rules) as $rules
+  | def matched($path): $rules | map(select(.match | map(. as $re | $path|test($re)) | any)) | .[0];
   . as $c
   | ($c.user | test("\\[bot\\]$")) as $bot
   | ($authors[($c.pr|tostring)] // null) as $author
   | ($c.user == $author) as $self
   | (($c.path // "")) as $path
-  | (if $path == "" then null
-     elif ($path|test("^apps/web/e2e/")) or ($path|test("\\.spec\\.ts$")) or ($path|test("^apps/api/test/integration/")) then "test"
-     elif ($path|test("^packages/database/prisma/migrations/")) then "migration"
-     elif ($path|test("^apps/web/")) then "FE"
-     elif ($path|test("^apps/api/")) or ($path|test("^packages/")) then "BE"
-     elif ($path|test("^docs/")) then "docs"
-     elif ($path|test("^(infra/|\\.github/|docker/)")) then "infra"
-     else null end) as $layer
+  | (if $path == "" then null else (matched($path) | if . == null then null else .layer end) end) as $layer
   | . + {is_bot:$bot, is_self_reply:$self, excluded:($bot or $self), layer:$layer}
 ' "$OUT/rc.raw.ndjson" > "$OUT/review-comments.ndjson" || : > "$OUT/review-comments.ndjson"
 
@@ -166,12 +184,12 @@ rv_count="$(wc -l < "$OUT/reviews.ndjson" | tr -d '[:space:]')"
 
 jq -n \
   --arg repo "$REPO" --arg since "$SINCE" --arg until "$UNTIL" \
-  --arg scope "$SCOPE" --arg users "${USERS:-all}" \
+  --arg scope "$SCOPE" --arg users "${USERS:-all}" --arg layout "$LAYOUT_NAME" \
   --argjson prs "${pr_count:-0}" --argjson rc "${rc_count:-0}" \
   --argjson ic "${ic_count:-0}" --argjson rv "${rv_count:-0}" \
   '{
      repo:$repo, since:$since, until:$until, scope:$scope, users:$users,
-     pr_count:$prs,
+     layout:$layout, pr_count:$prs,
      files:{
        "pulls.json": {rows:$prs, note:"PR metadata; enriched with type + sublabels[]"},
        "reviews.ndjson": {rows:$rv, note:"review submissions; enriched with is_bot"},

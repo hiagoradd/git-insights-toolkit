@@ -17,6 +17,10 @@ Parse from the request; both optional.
   like "just Hiago's" → the login (`hiagoradd`); ask only if a name is ambiguous.
 - **time-period** — **Default: last 7 days.** Accept "last 30 days", "last 2 weeks", an
   explicit `--since YYYY-MM-DD`, etc. Convert to `--days N` or `--since`.
+- **layout** (optional) — path to a layout config that drives PR `type` / comment `layer`
+  classification. Defaults to a `.prs-insights.json` in the working directory, else the bundled
+  `references/layouts/monorepo.json`. Pass `--layout <path>` only to override. See
+  `references/taxonomy.md` for the config format.
 
 ## Workflow
 
@@ -56,7 +60,7 @@ The run dir will contain:
 | `reviews.ndjson` | review submissions (state, timestamps), enriched with `is_bot` |
 | `review-comments.ndjson` | inline comments, enriched with `is_bot`, `is_self_reply`, `excluded`, `layer` |
 | `issue-comments.ndjson` | PR-body comments, enriched with `is_bot`, `is_self_reply`, `excluded` |
-| `manifest.json` | repo, window (`since`/`until`), `scope`, `pr_count`, and per-file row counts |
+| `manifest.json` | repo, window (`since`/`until`), `scope`, `layout` name, `pr_count`, and per-file row counts |
 
 The enrichment rules are mechanical (no LLM) — see `references/taxonomy.md` for the exact
 `type`/`layer`/exclusion definitions. `manifest.json` is the source of truth for the window and
