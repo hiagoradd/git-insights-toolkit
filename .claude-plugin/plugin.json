@@ -1,0 +1,11 @@
+{
+  "name": "git-insights-toolkit",
+  "description": "Git analytics for Claude Code, starting with PR insights: fetches a repo's PR history once, then generates delivery KPIs, review-collaboration, developer-coaching, and executive-summary reports. Built to expand to more Git analytics over time.",
+  "version": "1.0.0",
+  "author": {
+    "name": "hiagoradd"
+  },
+  "homepage": "https://github.com/hiagoradd/git-insights-toolkit",
+  "repository": "https://github.com/hiagoradd/git-insights-toolkit",
+  "license": "MIT"
+}

@@ -1,0 +1,5 @@
+# Claude Code local settings (may contain your email / machine-specific permissions)
+.claude/settings.local.json
+
+# Generated report output and cached datasets
+reports/prs-insights/
