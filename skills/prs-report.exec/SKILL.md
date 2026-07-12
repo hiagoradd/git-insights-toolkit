@@ -1,6 +1,6 @@
 ---
 name: prs-report.exec
-description: Generate the Executive Summary report for the cxnch-platform repo — a one-page, non-technical health snapshot of PR delivery for a PM or team lead: throughput, merge health, the single biggest risk to watch, and one concrete recommendation. A digest, in plain language, with no code jargon. Computes its own top-line from the dataset (independent of the other reports, so it can run in parallel). Reads a prs.fetch run directory (or fetches one if not given). Use when asked for an executive summary, a PM/leadership PR digest, or a high-level review health snapshot. Triggers on: "executive summary", "pr digest for leadership", "pm summary", "high-level pr health".
+description: Generate the Executive Summary report for a GitHub repo — a one-page, non-technical health snapshot of PR delivery for a PM or team lead: throughput, merge health, the single biggest risk to watch, and one concrete recommendation. A digest, in plain language, with no code jargon. Computes its own top-line from the dataset (independent of the other reports, so it can run in parallel). Reads a prs.fetch run directory (or fetches one if not given). Use when asked for an executive summary, a PM/leadership PR digest, or a high-level review health snapshot. Triggers on: "executive summary", "pr digest for leadership", "pm summary", "high-level pr health".
 ---
 
 # PR Insights — Executive Summary

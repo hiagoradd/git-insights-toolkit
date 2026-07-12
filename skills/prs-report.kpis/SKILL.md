@@ -1,6 +1,6 @@
 ---
 name: prs-report.kpis
-description: Generate the Delivery KPIs report for the cxnch-platform repo — the numbers dashboard over a window of PRs: volume, PRs by type/stack, size (files & lines), merge rate, cycle times (time-to-first-review, create→approve, approve→merge), review rounds, comment density, first-pass clean-merge rate, and per-contributor throughput. Purely quantitative and deterministic; no code-quality judgment. Reads a prs.fetch run directory (or fetches one if not given). Use when asked for PR metrics, delivery KPIs, throughput/cycle-time numbers, or "PRs by type". Triggers on: "pr kpis", "delivery metrics", "pr throughput", "cycle time report", "prs by type".
+description: Generate the Delivery KPIs report for a GitHub repo — the numbers dashboard over a window of PRs: volume, PRs by type/stack, size (files & lines), merge rate, cycle times (time-to-first-review, create→approve, approve→merge), review rounds, comment density, first-pass clean-merge rate, and per-contributor throughput. Purely quantitative and deterministic; no code-quality judgment. Reads a prs.fetch run directory (or fetches one if not given). Use when asked for PR metrics, delivery KPIs, throughput/cycle-time numbers, or "PRs by type". Triggers on: "pr kpis", "delivery metrics", "pr throughput", "cycle time report", "prs by type".
 ---
 
 # PR Insights — Delivery KPIs

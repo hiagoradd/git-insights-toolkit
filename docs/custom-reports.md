@@ -62,9 +62,9 @@ with no run dir, run `prs.fetch` first, then proceed.
 
 All enrichment is **mechanical / zero-LLM**, defined in
 `skills/prs.fetch/references/taxonomy.md`. `type` and `layer` are inferred from file **paths**,
-not titles — so they're cxnch-platform-specific (`apps/web`, `apps/api`, `packages/`,
+not titles — so they assume a specific monorepo layout (`apps/web`, `apps/api`, `packages/`,
 `packages/database/prisma/migrations/`, `apps/web/e2e/`, `*.spec.ts`). Against a different layout
-they degrade to `misc` / `null`.
+they degrade to `misc` / `null` (quantitative fields are unaffected).
 
 ### Two consumption rules (every report must follow)
 

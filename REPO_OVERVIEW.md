@@ -10,7 +10,7 @@
 
 ## Architecture map
 
-A two-layer PR-analytics pipeline targeting the **cxnch-platform** GitHub repo:
+A two-layer PR-analytics pipeline targeting **any GitHub repo** (your current `gh` default repo, or `--repo owner/name`):
 
 ```
 /prs-insights (command, orchestrator)
@@ -41,7 +41,7 @@ prs.fetch  ──►  run dir (manifest.json + pulls.json + *.ndjson)
   - `skills/prs.fetch/scripts/fetch-pr-data.sh` — the fetch + enrichment + manifest writer.
   - `skills/prs.fetch/references/taxonomy.md` — mechanical (zero-LLM) classification rules.
 - **Conventions:** Run dir `<scratch>/prs-insights/<since>_to_<until>_<scope>/` (scope = `team` or `+`-joined logins); reused if `manifest.json` already exists. Outputs: `pulls.json` (`type`, `sublabels[]`), `reviews.ndjson` (`is_bot`), `review-comments.ndjson` (`is_bot`, `is_self_reply`, `excluded`, `layer`), `issue-comments.ndjson`, `manifest.json` (source of truth). Enrichment: PR `type` (front-end/back-end/full-stack/e2e-testing/misc) inferred from `files[]` paths; `sublabels[]` includes `migration` for Prisma migrations; comment `layer` from path; `excluded = is_bot OR is_self_reply`.
-- **Gotchas:** Defaults to all users / last 7 days. Filters by PR **creation** date only, so in-window reviews on older PRs are missed unless `--since` is widened. `gh search prs --limit 200` cap; per-PR fetch errors are swallowed (`|| true`). Paths assume the cxnch-platform layout (`apps/web`, `apps/api`, `packages/database/prisma`).
+- **Gotchas:** Defaults to all users / last 7 days. Filters by PR **creation** date only, so in-window reviews on older PRs are missed unless `--since` is widened. `gh search prs --limit 200` cap; per-PR fetch errors are swallowed (`|| true`). The `type`/`layer` labels assume a monorepo layout (`apps/web`, `apps/api`, `packages/database/prisma`); on other layouts the numbers stay accurate and only the labels degrade.
 
 ### Report generation — `skills/prs-insights-{kpis,collab,dev,exec}/`
 - **Purpose:** Four sibling skills, each consuming the shared fetch run directory and emitting one distinct markdown report.
@@ -71,6 +71,6 @@ prs.fetch  ──►  run dir (manifest.json + pulls.json + *.ndjson)
 
 ## Open questions
 - Scaling of `gh search prs --limit 200` and `xargs -P 10` for large time windows / high-volume repos.
-- Behavior when the `gh` default repo is not cxnch-platform (path-based enrichment assumes that layout).
+- On repos with a non-monorepo layout, path-based `type`/`layer` enrichment degrades to `misc`/`null` (all quantitative metrics are unaffected); the path rules live in the fetch script and `taxonomy.md`.
 - No pinned tool versions (`gh`, `jq`, `bash`) — portability across BSD/GNU is handled ad hoc.
 - Trends require persisted run history, which does not yet exist.

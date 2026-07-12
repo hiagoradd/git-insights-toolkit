@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-This repo is a **Claude Code plugin** (not an application). It ships a small set of slash commands and skills that form a PR-analytics pipeline for the **cxnch-platform** GitHub repo. There is no build, no test suite, and no application runtime — the "code" is Markdown skill/command definitions (YAML frontmatter + prose) plus a single Bash fetch script. Data flows as JSON/NDJSON, enriched with `jq`, sourced via the `gh` GitHub CLI.
+This repo is a **Claude Code plugin** (not an application). It ships a small set of slash commands and skills that form a PR-analytics pipeline for **any GitHub repo** (it targets your current `gh` default repo unless `--repo` is passed). There is no build, no test suite, and no application runtime — the "code" is Markdown skill/command definitions (YAML frontmatter + prose) plus a single Bash fetch script. Data flows as JSON/NDJSON, enriched with `jq`, sourced via the `gh` GitHub CLI.
 
 ## Running it
 
@@ -70,7 +70,7 @@ The **`dev`** skill is the only one that does LLM classification (theme/severity
 
 ## Conventions & gotchas
 
-- **Path assumptions are cxnch-platform-specific.** Enrichment keys off `apps/web`, `apps/api`, `packages/`, `packages/database/prisma/migrations/`, `apps/web/e2e/`, `*.spec.ts`. Against a differently-laid-out repo, `type`/`layer` inference degrades to `misc`/`null`.
+- **Path-based enrichment is tuned to one monorepo layout** (the one the toolkit was first built against). Enrichment keys off `apps/web`, `apps/api`, `packages/`, `packages/database/prisma/migrations/`, `apps/web/e2e/`, `*.spec.ts`. Against a differently-laid-out repo every quantitative metric is still accurate; only the `type`/`layer` labels degrade to `misc`/`null`. See "Adapting to your repo layout" in the README.
 - **The window filters by PR *creation* date only.** A PR created before `--since` but reviewed in-window will be missed unless you widen `--since`.
 - `gh search prs --limit 200` caps results; per-PR fetches run under `xargs -P 10` and swallow individual errors (`|| true`), so a partial dataset fails soft rather than aborting.
 - The fetch script targets **portable Bash** (`set -euo pipefail`, GNU-then-BSD `date` fallback). Preserve that when editing.
