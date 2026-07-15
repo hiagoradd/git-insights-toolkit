@@ -51,6 +51,20 @@ All optional and free-form — the command parses them from natural language too
 
 You can also request a single report — e.g. "kpis only" or "just coaching" — and the orchestrator will fetch once and spawn only that one.
 
+### Not sure what you want? Get grilled
+
+If you don't want to remember the flags, run the guided front-end and let it interview you:
+
+```
+/git-insights-toolkit:prs-insights-grill
+```
+
+It asks what you want to learn (leadership snapshot, delivery numbers, review-collaboration health, coaching, or a question of your own), whose work, and over what window — with adaptive follow-ups — then derives the right `/prs-insights` invocation (a subset of the built-in reports and/or a composed custom question), shows it to you, and runs it on approval.
+
+### Keep a custom report
+
+When you produce a custom report (via `--ask` or the grill workflow), the toolkit offers to **save it as a reusable report skill**. Say yes and it scaffolds a `prs-report.<name>` skill — SKILL.md + a fill-in template, just like the built-ins — into **your own repo** under `.claude/skills/`, derived from the report you just got. From then on you can re-run it any time with `/prs-insights --reports <name>`. See [`docs/custom-reports.md`](docs/custom-reports.md).
+
 ### Example
 
 ```

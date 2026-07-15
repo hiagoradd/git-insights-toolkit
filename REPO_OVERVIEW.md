@@ -37,6 +37,9 @@ prs.fetch  ──►  run dir (manifest.json + pulls.json + *.ndjson)
 - **Run:** `bash skills/prs.fetch/scripts/fetch-pr-data.sh --out <dir> [--users a,b] [--since YYYY-MM-DD|--days N] [--repo owner/name]`. Fetches PR numbers by creation date (limit 200), then per-PR parallel fetch (`xargs -P 10`) of metadata/files/reviews/review-comments/issue-comments, then `jq` enrichment.
 - **Structure:**
   - `commands/prs-insights.md` — orchestrator: parse args, fetch once, spawn 4 report subagents in one message, return only paths + headlines.
+  - `commands/prs-full.md`, `commands/prs-coaching.md` — thin presets: delegate to `/prs-insights` with fixed `--reports`.
+  - `commands/prs-insights-grill.md` — guided front-end: `AskUserQuestion` interview → derive `--reports`/`--ask` → confirm → delegate to `/prs-insights`.
+  - `skills/prs.report-scaffold/SKILL.md` — assisted authoring: promotes a one-off `--ask` report into a reusable `prs-report.<name>` skill in the *user's* repo (`.claude/skills/`). Invoked from `/prs-insights` Step 4 on opt-in.
   - `skills/prs.fetch/SKILL.md` — parameters, run-dir convention, output schema, boundaries (data only, no report).
   - `skills/prs.fetch/scripts/fetch-pr-data.sh` — the fetch + enrichment + manifest writer.
   - `skills/prs.fetch/references/taxonomy.md` — mechanical (zero-LLM) classification rules.
@@ -59,7 +62,9 @@ prs.fetch  ──►  run dir (manifest.json + pulls.json + *.ndjson)
 | Type | Name | What it does |
 |------|------|--------------|
 | command | prs-insights | Orchestrator: fetch the dataset once, fan out the 4 report skills in parallel, present paths + headlines |
+| command | prs-insights-grill | Guided "grill me" front-end: interviews the user, derives a `/prs-insights` invocation, confirms, delegates |
 | skill | prs.fetch | Fetch + deterministically enrich a PR review dataset via `gh`/`jq`; writes a reusable run dir + manifest. Data only |
+| skill | prs.report-scaffold | Assisted authoring: turns a one-off `--ask` report into a reusable `prs-report.<name>` skill in the user's own repo |
 | skill | prs-report.kpis | Delivery KPIs report — quantitative throughput / cycle-time dashboard |
 | skill | prs-report.collab | Review Collaboration report — reviewer load, who-reviews-whom, bus factor |
 | skill | prs-report.dev | Developer Coaching report — LLM-classified recurring feedback → reinforcement proposals |

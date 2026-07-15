@@ -115,6 +115,19 @@ Then offer to circulate the set — a shareable **Artifact**, a GitHub issue, or
 the markdown files are always the deliverable. Never paste full report bodies into the final
 message; link the files.
 
+## Step 4 — Offer to save a custom report (only if `--ask` was used)
+
+If this run produced a custom **`--ask`** report (a one-off, not a named `prs-report.*` skill), ask
+the user — once — whether they want to **keep it as a reusable report skill** so the same report can
+be re-run later via `--reports <name>`. Built-in named reports are already skills, so skip the offer
+for them.
+
+If the user says yes, invoke the **`prs.report-scaffold`** skill, handing it the produced report's
+file path, the original `--ask` prompt, and the run-dir path + manifest one-liner. It scaffolds a
+`prs-report.<name>` skill (SKILL.md + `assets/report-template.md`) into the **user's own repo**
+(`.claude/skills/`), following `docs/custom-reports.md`. Don't scaffold anything yourself here —
+delegate to the skill. If the user declines, do nothing.
+
 ## Notes
 
 - If `prs.fetch` errors, surface it and stop — check `gh auth status` first.

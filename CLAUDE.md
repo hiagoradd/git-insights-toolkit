@@ -18,6 +18,7 @@ Everything runs *inside Claude Code*, not from a shell. The customizable entry p
 /git-insights-toolkit:prs-insights --run-dir <path> --ask "do we need more FE or BE devs?"
 /git-insights-toolkit:prs-full                                  # preset: all four built-ins
 /git-insights-toolkit:prs-coaching --users hiagoradd            # preset: dev report only
+/git-insights-toolkit:prs-insights-grill                        # guided: interview me, then delegate to /prs-insights
 ```
 
 `/prs-insights` params (all optional): `--reports <list|all>` · `--ask "<prompt>"` · `--fetch-only` · `--run-dir <path>` · `--users` · `--since`/`--days` · `--repo` · `--layout <config>`. See `commands/prs-insights.md`.
@@ -42,7 +43,7 @@ report providers (OPEN REGISTRY): any prs-report.<name> skill
    kpis · collab · dev · exec (built-ins)  +  your prs-report.<custom>   each reads the run dir, writes ONE .md
         ▲   name→skill resolution: report "X" ⇒ skill "prs-report.X"
 /prs-insights (DEFAULT command) → parse args → run fetch ONCE → spawn the selected report subagents in parallel
-        ▲   thin delegators (fixed params, no logic of their own)
+        ▲   thin delegators (fixed params, no logic of their own)  ·  /prs-insights-grill (asks, then delegates)
 presets: /prs-full (--reports all) · /prs-coaching (--reports dev)
 ```
 
@@ -50,7 +51,9 @@ presets: /prs-full (--reports all) · /prs-coaching (--reports dev)
 - **Report providers** are selected by name: report `X` ⇒ skill `prs-report.X`. `--reports all` runs only the four built-ins; custom reports are opt-in by name. Any `prs-report.*` skill is instantly selectable with **no command changes** — that's the extension point.
 - All reports are independent (`exec` recomputes its own top-line rather than reading siblings), so parallel fan-out over any subset is safe.
 - **Modes beyond named reports:** `--ask "<prompt>"` spawns a generic subagent that answers a one-off question against the dataset (no skill needed); `--fetch-only` stops after fetch and returns the run-dir path; `--run-dir <path>` reuses an existing populated run dir with no GitHub round-trip.
+- **Promoting a one-off to a reusable report:** after an `--ask` report (direct or via `/prs-insights-grill`), `/prs-insights` Step 4 offers to persist it. Saying yes invokes the **`prs.report-scaffold`** skill, which scaffolds a `prs-report.<name>` skill (SKILL.md + template) into the **user's own repo** (`.claude/skills/`, not this plugin) — instantly selectable via `--reports <name>`. This is the assisted counterpart to hand-authoring per `docs/custom-reports.md`.
 - All orchestration logic lives in `/prs-insights`. `/prs-full` and `/prs-coaching` are thin delegators that just call it with fixed params (and double as copyable examples).
+- **`/prs-insights-grill`** is an *interactive front-end*, not a pure delegator: it runs an adaptive `AskUserQuestion` interview (goal / scope / window, then follow-ups), derives a `--reports` subset and/or a composed `--ask` prompt, confirms it, then delegates to `/prs-insights`. It still holds no fetch/report logic — the derivation-from-answers is its only job.
 - The orchestrator holds only paths + short headlines; the raw dataset and full report bodies never flow back through the command.
 
 ### Run directory convention
@@ -82,3 +85,5 @@ Each skill lives under `skills/<name>/` with a `SKILL.md` (frontmatter `name` + 
 ### Adding a report (the extension point)
 
 Drop a `skills/prs-report.<name>/` skill following `docs/custom-reports.md` — it reads the shared run dir, fills its own `assets/report-template.md`, writes `reports/prs-insights/<since>_to_<until>_<scope>_<name>.md`, and returns only path + headline. It's then selectable via `/prs-insights --reports <name>` with **no command edits**. Don't add it to `--reports all` (that's the built-in-only set). To add a new preset command, copy `commands/prs-full.md` and change the `--reports` value — keep presets as pure delegators so orchestration logic stays only in `/prs-insights`.
+
+The **`prs.report-scaffold`** skill is the assisted authoring path: it writes exactly this shape (SKILL.md + template) but into the **user's** repo (`.claude/skills/prs-report.<name>/`), derived from a just-produced `--ask` report. `/prs-insights` Step 4 invokes it on user opt-in. Note the namespace split — report skills are `prs-report.*` (selectable by `--reports`); the scaffolder is `prs.report-scaffold` (infra, in the `prs.*` namespace like `prs.fetch`) so it never collides with the report registry.

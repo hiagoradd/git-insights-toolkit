@@ -121,6 +121,23 @@ That's it. Your report is now selectable:
 
 `--reports all` runs only the four built-ins; custom reports are always opt-in by name.
 
+### Where custom skills live
+
+Author yours in **your own repo** at `.claude/skills/prs-report.<name>/` (project skills Claude
+Code discovers), not inside this plugin. A freshly created project skill may only become selectable
+after Claude Code reloads skills (e.g. next session).
+
+---
+
+## Save a one-off `--ask` as a reusable skill (assisted)
+
+You don't have to hand-author. After `/prs-insights --ask "…"` (or the `/prs-insights-grill`
+workflow) produces a custom report, the workflow **offers to keep it**: say yes and the
+**`prs.report-scaffold`** skill scaffolds a `prs-report.<name>` skill (SKILL.md +
+`assets/report-template.md`) into your repo's `.claude/skills/`, derived from the report that was
+just produced and this same contract. It's then selectable via `/prs-insights --reports <name>`.
+You can also trigger it directly — "save this report as a skill".
+
 ---
 
 ## Related files
