@@ -38,18 +38,34 @@ Run the orchestrator command (namespaced by the plugin):
 
 It defaults to **all authors over the last 7 days**. It fetches the dataset once (`prs.fetch`), generates the four reports in parallel, and returns each file's path plus a short headline. The report files under `reports/prs-insights/` are the deliverable.
 
+### Commands
+
+| Command | What it does |
+|---|---|
+| `/prs-insights` | The customizable orchestrator — pick reports, ask questions, set scope/window (see [Options](#options)) |
+| `/prs-insights-grill` | Guided "grill me" front-end — interviews you, then runs the right `/prs-insights` for you |
+| `/prs-full` | Preset: all four built-in reports (`--reports all`) |
+| `/prs-coaching` | Preset: just the developer-coaching report (`--reports dev`) |
+
+All are namespaced by the plugin (e.g. `/git-insights-toolkit:prs-insights`). The presets are thin wrappers over `/prs-insights` — copy them to make your own.
+
 ### Options
 
-All optional and free-form — the command parses them from natural language too ("last 30 days, just Alice").
+All optional:
 
 | Option | Effect |
 |---|---|
+| `--reports <list\|all>` | Which reports to run: any of `kpis`, `collab`, `dev`, `exec` (comma- or `+`-separated), a custom `prs-report.<name>`, or `all` (default = the four built-ins) |
+| `--ask "<prompt>"` | Answer a one-off free-form question against the dataset — no skill needed. Can combine with `--reports` |
+| `--fetch-only` | Fetch the dataset and stop; returns the run-dir path so you can point your own agent at it |
+| `--run-dir <path>` | Reuse an existing populated run directory instead of refetching (no GitHub round-trip) |
 | `--users "login1,login2"` | Restrict to specific PR authors (default: everyone) |
 | `--since YYYY-MM-DD` | Start of the window (filters by PR **creation** date) |
 | `--days N` | Window as a number of days back (default: 7) |
 | `--repo owner/name` | Target a specific repo (default: your current `gh` default repo) |
+| `--layout <path>` | Path-classification config for PR `type` / comment `layer` (default: repo-local `.prs-insights.json`, else the bundled monorepo layout — see [Adapting to your repo layout](#adapting-to-your-repo-layout)) |
 
-You can also request a single report — e.g. "kpis only" or "just coaching" — and the orchestrator will fetch once and spawn only that one.
+Everything is free-form — the command parses these from natural language too ("kpis only for the last 30 days, just Alice"). You can request a single report (e.g. "just coaching") and the orchestrator fetches once and spawns only that one.
 
 ### Not sure what you want? Get grilled
 
