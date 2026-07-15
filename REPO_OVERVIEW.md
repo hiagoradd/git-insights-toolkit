@@ -40,6 +40,7 @@ prs.fetch  ──►  run dir (manifest.json + pulls.json + *.ndjson)
   - `commands/prs-full.md`, `commands/prs-coaching.md` — thin presets: delegate to `/prs-insights` with fixed `--reports`.
   - `commands/prs-insights-grill.md` — guided front-end: `AskUserQuestion` interview → derive `--reports`/`--ask` → confirm → delegate to `/prs-insights`.
   - `skills/prs.report-scaffold/SKILL.md` — assisted authoring: promotes a one-off `--ask` report into a reusable `prs-report.<name>` skill in the *user's* repo (`.claude/skills/`). Invoked from `/prs-insights` Step 4 on opt-in.
+  - `skills/prs.compose/SKILL.md` — presentation: consolidates the finished per-report `.md` files into one combined document (`--format single`) or a self-contained Artifact web page (`--format webpage`). Spawned by `/prs-insights` Step 3 so report bodies stay out of the orchestrator's context.
   - `skills/prs.fetch/SKILL.md` — parameters, run-dir convention, output schema, boundaries (data only, no report).
   - `skills/prs.fetch/scripts/fetch-pr-data.sh` — the fetch + enrichment + manifest writer.
   - `skills/prs.fetch/references/taxonomy.md` — mechanical (zero-LLM) classification rules.
@@ -65,6 +66,7 @@ prs.fetch  ──►  run dir (manifest.json + pulls.json + *.ndjson)
 | command | prs-insights-grill | Guided "grill me" front-end: interviews the user, derives a `/prs-insights` invocation, confirms, delegates |
 | skill | prs.fetch | Fetch + deterministically enrich a PR review dataset via `gh`/`jq`; writes a reusable run dir + manifest. Data only |
 | skill | prs.report-scaffold | Assisted authoring: turns a one-off `--ask` report into a reusable `prs-report.<name>` skill in the user's own repo |
+| skill | prs.compose | Presentation: consolidates finished report files into one combined doc (`--format single`) or a shareable Artifact web page (`--format webpage`) |
 | skill | prs-report.kpis | Delivery KPIs report — quantitative throughput / cycle-time dashboard |
 | skill | prs-report.collab | Review Collaboration report — reviewer load, who-reviews-whom, bus factor |
 | skill | prs-report.dev | Developer Coaching report — LLM-classified recurring feedback → reinforcement proposals |

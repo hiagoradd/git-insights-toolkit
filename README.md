@@ -64,6 +64,7 @@ All optional:
 | `--days N` | Window as a number of days back (default: 7) |
 | `--repo owner/name` | Target a specific repo (default: your current `gh` default repo) |
 | `--layout <path>` | Path-classification config for PR `type` / comment `layer` (default: repo-local `.prs-insights.json`, else the bundled monorepo layout — see [Adapting to your repo layout](#adapting-to-your-repo-layout)) |
+| `--format <files\|single\|webpage>` | How to deliver the reports: `files` (default, one `.md` per report), `single` (also stitch them into one combined document), or `webpage` (also render a shareable Artifact web page). The per-report files are always written regardless |
 
 Everything is free-form — the command parses these from natural language too ("kpis only for the last 30 days, just Alice"). You can request a single report (e.g. "just coaching") and the orchestrator fetches once and spawns only that one.
 
@@ -75,7 +76,7 @@ If you don't want to remember the flags, run the guided front-end and let it int
 /git-insights-toolkit:prs-insights-grill
 ```
 
-It asks what you want to learn (leadership snapshot, delivery numbers, review-collaboration health, coaching, or a question of your own), whose work, and over what window — with adaptive follow-ups — then derives the right `/prs-insights` invocation (a subset of the built-in reports and/or a composed custom question), shows it to you, and runs it on approval.
+It asks what you want to learn (leadership snapshot, delivery numbers, review-collaboration health, coaching, or a question of your own), whose work, over what window, and how you want the results delivered (a file per report, one combined document, or a shareable webpage) — with adaptive follow-ups — then derives the right `/prs-insights` invocation (a subset of the built-in reports and/or a composed custom question, plus `--format`), shows it to you, and runs it on approval.
 
 ### Keep a custom report
 

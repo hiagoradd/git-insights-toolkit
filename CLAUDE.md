@@ -21,7 +21,7 @@ Everything runs *inside Claude Code*, not from a shell. The customizable entry p
 /git-insights-toolkit:prs-insights-grill                        # guided: interview me, then delegate to /prs-insights
 ```
 
-`/prs-insights` params (all optional): `--reports <list|all>` · `--ask "<prompt>"` · `--fetch-only` · `--run-dir <path>` · `--users` · `--since`/`--days` · `--repo` · `--layout <config>`. See `commands/prs-insights.md`.
+`/prs-insights` params (all optional): `--reports <list|all>` · `--ask "<prompt>"` · `--fetch-only` · `--run-dir <path>` · `--users` · `--since`/`--days` · `--repo` · `--layout <config>` · `--format <files|single|webpage>`. See `commands/prs-insights.md`.
 
 The fetch script can be run directly for debugging the data layer:
 
@@ -51,9 +51,10 @@ presets: /prs-full (--reports all) · /prs-coaching (--reports dev)
 - **Report providers** are selected by name: report `X` ⇒ skill `prs-report.X`. `--reports all` runs only the four built-ins; custom reports are opt-in by name. Any `prs-report.*` skill is instantly selectable with **no command changes** — that's the extension point.
 - All reports are independent (`exec` recomputes its own top-line rather than reading siblings), so parallel fan-out over any subset is safe.
 - **Modes beyond named reports:** `--ask "<prompt>"` spawns a generic subagent that answers a one-off question against the dataset (no skill needed); `--fetch-only` stops after fetch and returns the run-dir path; `--run-dir <path>` reuses an existing populated run dir with no GitHub round-trip.
+- **Output format (`--format <files|single|webpage>`):** a *presentation-only* concern. The report subagents always write their per-report `.md` files (source of truth). For `files` (default) the orchestrator just presents paths + headlines. For `single`/`webpage`, Step 3 **delegates to a `prs.compose` subagent** (infra namespace, like `prs.fetch`/`prs.report-scaffold`) that reads the finished report files and produces one combined document (`single`) or a self-contained Artifact page (`webpage`), returning only the path/URL + headline. Delegating keeps the report bodies out of the orchestrator's context (its core invariant). Never touches fetch or the report subagents. `/prs-insights-grill` surfaces the choice as its fourth core question and passes the derived flag through.
 - **Promoting a one-off to a reusable report:** after an `--ask` report (direct or via `/prs-insights-grill`), `/prs-insights` Step 4 offers to persist it. Saying yes invokes the **`prs.report-scaffold`** skill, which scaffolds a `prs-report.<name>` skill (SKILL.md + template) into the **user's own repo** (`.claude/skills/`, not this plugin) — instantly selectable via `--reports <name>`. This is the assisted counterpart to hand-authoring per `docs/custom-reports.md`.
 - All orchestration logic lives in `/prs-insights`. `/prs-full` and `/prs-coaching` are thin delegators that just call it with fixed params (and double as copyable examples).
-- **`/prs-insights-grill`** is an *interactive front-end*, not a pure delegator: it runs an adaptive `AskUserQuestion` interview (goal / scope / window, then follow-ups), derives a `--reports` subset and/or a composed `--ask` prompt, confirms it, then delegates to `/prs-insights`. It still holds no fetch/report logic — the derivation-from-answers is its only job.
+- **`/prs-insights-grill`** is an *interactive front-end*, not a pure delegator: it runs an adaptive `AskUserQuestion` interview (goal / scope / window / output, then follow-ups), derives a `--reports` subset and/or a composed `--ask` prompt plus `--format`, confirms it, then delegates to `/prs-insights`. It still holds no fetch/report logic — the derivation-from-answers is its only job.
 - The orchestrator holds only paths + short headlines; the raw dataset and full report bodies never flow back through the command.
 
 ### Run directory convention

@@ -29,8 +29,9 @@ report subagents.
 
 ## Step 1 — Core questions (one `AskUserQuestion` call)
 
-Ask these three together. Seed defaults from `$ARGUMENTS` if the user already hinted at any (e.g.
-"grill me about last month" → pre-fill the window); still confirm.
+Ask these four together. Seed defaults from `$ARGUMENTS` if the user already hinted at any (e.g.
+"grill me about last month" → pre-fill the window; "put it on a webpage" → pre-fill output); still
+confirm.
 
 - **Goal** — *what do you want to learn?* (`multiSelect: true`)
   - *Leadership snapshot* → report `exec`
@@ -44,6 +45,9 @@ Ask these three together. Seed defaults from `$ARGUMENTS` if the user already hi
 - **Window** — *over what period?* (single)
   - *Last 7 days* (`--days 7`, default) · *Last 30 days* (`--days 30`) ·
     *Last quarter* (`--days 90`) · *Custom* (ask for a date or day count)
+- **Output** — *how do you want the results delivered?* (single) → maps to `--format`
+  - *A file per report* (`--format files`, default) · *One combined document*
+    (`--format single`) · *A shareable webpage* (`--format webpage`)
 
 ## Step 2 — Adaptive follow-ups (branch on the Step-1 answers)
 
@@ -81,6 +85,8 @@ Map the answers to args:
   does. Combine multiple emphases into a single `--ask`; don't emit several.
 - **`--users`** — from Scope (omit for whole team).
 - **Window** — `--days` / `--since` from the Window answer.
+- **`--format`** — from the Output answer (`files` / `single` / `webpage`). Omit when it's the
+  default (`files`).
 - If the user somehow selected nothing and gave no question, default to **`--reports all`**.
 
 ## Step 4 — Confirm before running
@@ -89,7 +95,7 @@ Show the derived one-liner and ask *Run it / Adjust* (`AskUserQuestion`). Exampl
 
 ```
 /prs-insights --reports dev --ask "Across FE files, which attract the most convention/style and
-test-coverage review comments?" --users hiagoradd --days 30
+test-coverage review comments?" --users hiagoradd --days 30 --format webpage
 ```
 
 On **Adjust**, revisit the relevant question and re-derive. On **Run it**, continue.

@@ -47,6 +47,12 @@ own.
 - **`--layout <path>`** — path-classification config for PR `type` / comment `layer`. Default:
   a `.prs-insights.json` in the working dir, else the bundled monorepo layout. See
   `docs/custom-reports.md` / `skills/prs.fetch/references/taxonomy.md`.
+- **`--format <files|single|webpage>`** — how to deliver the selected reports. **Default: `files`**
+  = one markdown file per report (the current behavior). `single` = also stitch them into one
+  combined markdown document. `webpage` = also render them as a single self-contained, shareable
+  **Artifact** web page. In every mode the per-report `.md` files under `reports/prs-insights/`
+  are still written and remain the source of truth — `single`/`webpage` add a consolidated view on
+  top. Governs presentation only (Step 3); it has no effect on fetch or on the report subagents.
 
 `--users`, `--since`/`--days`, `--repo`, and `--layout` are passed through to `prs.fetch`
 unchanged; they are ignored when `--run-dir` is given (the run dir's `manifest.json` already fixes
@@ -103,17 +109,27 @@ The built-in registry (any `prs-report.*` skill works the same way):
 All reports are independent (the exec summary computes its own top-line and does **not** depend on
 the sibling reports' output), so parallel fan-out is always safe.
 
-## Step 3 — Present
+## Step 3 — Present (honoring `--format`)
 
-Collect each subagent's returned path + headline and present **one** consolidated message:
+Collect each subagent's returned path + headline. The per-report `.md` files under
+`reports/prs-insights/` are always written first and are the source of truth — `--format` only
+decides what you additionally build and present.
 
-- A short line per report: its headline + the file path (under `reports/prs-insights/`).
-- Note the run directory the dataset came from (so a rerun of one report — or a follow-up
-  `--run-dir <path> --ask "…"` — can reuse it).
+- **`files`** (default) — present **one** consolidated message:
+  - A short line per report: its headline + the file path (under `reports/prs-insights/`).
+  - Note the run directory the dataset came from (so a rerun of one report — or a follow-up
+    `--run-dir <path> --ask "…"` — can reuse it).
+  - Then offer to circulate the set — a shareable **Artifact**, a GitHub issue, or a Linear doc.
 
-Then offer to circulate the set — a shareable **Artifact**, a GitHub issue, or a Linear doc — but
-the markdown files are always the deliverable. Never paste full report bodies into the final
-message; link the files.
+- **`single`** or **`webpage`** — **don't read the report bodies here.** Spawn **one** subagent on
+  the **`prs.compose`** skill (via the Agent tool), handing it: the `format` (`single`/`webpage`),
+  the list of per-report file paths + their names, and the run-dir path + manifest one-liner. It
+  reads those files, builds the combined document (and, for `webpage`, publishes a self-contained
+  Artifact), and returns **only** the resulting path/URL + a headline. Present what it returns plus
+  the run directory; note the per-report `.md` files remain the durable deliverable. Delegating
+  keeps the report bodies out of this command's context (the orchestrator invariant).
+
+Never paste full report bodies into the final chat message; link the files / Artifact.
 
 ## Step 4 — Offer to save a custom report (only if `--ask` was used)
 
