@@ -49,15 +49,22 @@ prs.fetch  ──►  run dir (manifest.json + pulls.json + *.ndjson)
 
 ### Report generation — `skills/prs-insights-{kpis,collab,dev,exec}/`
 - **Purpose:** Four sibling skills, each consuming the shared fetch run directory and emitting one distinct markdown report.
-- **Stack:** Markdown-only Claude skills; data is JSON/NDJSON. The `dev` skill additionally greps `.claude/rules/*` and `**/CLAUDE.md` to map feedback to enforcement.
+- **Stack:** Markdown-only Claude skills; data is JSON/NDJSON. The `dev` skill composes the shared `prs.classify` (theme/severity) and `prs.reinforce` (which greps `.claude/rules/*`, `**/CLAUDE.md`, and skills/agents to map feedback to enforcement) skills.
 - **Run:** Each reads a `prs.fetch` run dir; if invoked standalone with no run dir it first runs `prs.fetch`. Each writes one file to `reports/prs-insights/<since>_to_<until>_<scope>_<name>.md` and returns only the path + a short headline.
 - **Structure (skill → report):**
   - `prs-report.kpis` → Delivery KPIs: quantitative dashboard (volume, size, cycle times, merge / first-pass clean-merge rates, per-contributor throughput).
   - `prs-report.collab` → Review Collaboration: reviewer-load concentration, who-reviews-whom matrix, time-to-first-review, bus-factor risk.
-  - `prs-report.dev` → Developer Coaching: LLM-classified recurring review feedback mapped to reinforcement proposals.
+  - `prs-report.dev` → Developer Coaching: LLM-classified recurring review feedback mapped to reinforcement proposals (via the shared `prs.classify` + `prs.reinforce` skills).
   - `prs-report.exec` → Executive Summary: one-page, plain-language PM/leadership digest.
 - **Conventions:** Each fills in its `assets/report-template.md`; tables plus `████░░` bar glyphs; every narrative number traces back to a table; read-only except for the one report file written.
-- **Gotchas:** All four run in parallel and independently. `dev` is the only skill that does LLM classification — its `references/classification.md` defines fixed enums: **theme** (14 values incl. correctness-bug, convention/style, architecture/layering, test-coverage, error-handling, migration-hygiene, pr-scope, performance, security, a11y, naming/docs, dead/premature-UI, question, praise) and **severity** (critical/blocker/suggestion), plus actionability + resolution. Themes recurring ≥3 times map to the cheapest enforcement: automation > strengthen-existing-rule > new-rule > process. Week-over-week trends are stateless ("n/a first run") until run history is persisted.
+- **Gotchas:** All four run in parallel and independently. LLM classification lives in the shared **`prs.classify`** skill (not `dev` itself) — `skills/prs.classify/references/classification.md` defines the fixed enums: **theme** (14 values incl. correctness-bug, convention/style, architecture/layering, test-coverage, error-handling, migration-hygiene, pr-scope, performance, security, a11y, naming/docs, dead/premature-UI, question, praise) and **severity** (critical/blocker/suggestion), plus actionability + resolution. The recurring-pattern → cheapest-enforcement mapping (automation > strengthen-existing > new guidance > process, threshold ≥3) lives in **`prs.reinforce`** (`skills/prs.reinforce/references/reinforcement.md`). `dev` composes both. Week-over-week trends are stateless ("n/a first run") until run history is persisted.
+
+### Shared judgment + action — `skills/prs.classify/`, `skills/prs.reinforce/`, `commands/prs-reinforce.md`
+- **Purpose:** Factor the LLM layers out of the dev report so they're reusable and controllable, and add an action arm that applies the resulting guidance changes.
+- **`prs.classify`** — the one LLM classification pass. Reads a run dir's comment files, writes `classified-issues.ndjson` (theme/severity/actionability/resolution + `excerpt` per non-excluded comment). Reused if already present.
+- **`prs.reinforce`** — reads `classified-issues.ndjson`, clusters recurring themes (≥3), surveys the target repo's `.claude` guidance surface (rules, CLAUDE.md, skills/agents incl. installed plugins), and returns **structured** `proposals[]` (persisted as `reinforcement-proposals.json`), each flagged `applyable` (target inside the checkout) or not. Read-only — proposes, never edits.
+- **`/prs-reinforce`** — the only **mutating** command: fetch → classify → reinforce → apply edits (additive fully, in-place best-effort) + write reinforcement report → branch + PR. **`--interactive` (default `false`)** controls the gates: `false` = autonomous (apply all `applyable`, open PR, no prompts); `true` = multi-select pick + diff-review confirmation before push. Guards analyzed-repo == local-checkout; non-applyable proposals become PR-body notes.
+- **Gotchas:** Enum/ladder single-source-of-truth is in the two skills; don't re-define elsewhere. Autonomous by default — the PR is the review surface; use `--interactive true` for gated review. The analyzed-repo guard and "no pattern → no PR" check are always on. `/prs-insights` and all reports stay read-only.
 
 ## .claude tooling
 | Type | Name | What it does |

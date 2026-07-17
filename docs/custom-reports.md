@@ -69,6 +69,19 @@ not titles, via a **layout config** (bundled default `monorepo.json`, or a repo-
 fields are unaffected) until you supply a matching config. `manifest.json.layout` records which
 config produced the run.
 
+### Optional derived judgment files (added by the shared skills)
+
+`prs.fetch` writes only the four mechanical files above. Two **judgment** artifacts may also appear
+in the run dir once the shared LLM skills have run — reuse them if present instead of recomputing:
+
+| File | Written by | Contents |
+|---|---|---|
+| `classified-issues.ndjson` | `prs.classify` | one row per actionable comment: `pr, pr_type, source, user, path, line, layer, created_at, theme, severity, actionability, resolution, excerpt` (enums in `skills/prs.classify/references/classification.md`) |
+| `reinforcement-proposals.json` | `prs.reinforce` | ranked `proposals[]`: `rank, theme, severity, recurrence, pr_refs[], already_covered, cheapest_layer, change_type, target_file, anchor, exact_text, applyable, rationale` |
+
+These are **not** part of `prs.fetch`'s guaranteed output — they exist only after `prs.classify` /
+`prs.reinforce` run. They stay separate files so `prs.fetch` remains zero-LLM.
+
 ### Two consumption rules (every report must follow)
 
 1. **Drop `excluded == true` rows** from all comment counts. `excluded = is_bot OR is_self_reply`
@@ -79,8 +92,9 @@ config produced the run.
 ### What is NOT in the dataset
 
 Theme, severity, actionability, and resolution are **not** provided — they're judgment calls. If
-your report needs them, classify the comments yourself (the built-in `prs-report.dev` does this;
-its enums live in `skills/prs-report.dev/references/classification.md`).
+your report needs them, run the shared **`prs.classify`** skill (it writes
+`classified-issues.ndjson` into the run dir), or classify the comments yourself using the same enums
+— they live in `skills/prs.classify/references/classification.md`.
 
 ---
 
@@ -144,5 +158,6 @@ You can also trigger it directly — "save this report as a skill".
 
 - `skills/prs.fetch/SKILL.md` — the data producer.
 - `skills/prs.fetch/references/taxonomy.md` — exact `type` / `layer` / exclusion rules.
-- `skills/prs-report.dev/references/classification.md` — theme/severity enums, if you classify.
+- `skills/prs.classify/references/classification.md` — theme/severity enums (shared classification).
+- `skills/prs.reinforce/references/reinforcement.md` — the recurring-pattern → guidance ladder.
 - `commands/prs-insights.md` — the workflow that dispatches reports.

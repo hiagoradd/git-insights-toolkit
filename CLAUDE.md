@@ -39,15 +39,22 @@ Layered pipeline: **fetch once, fan out selected independent reports.** The repo
 ```
 prs.fetch  → writes a run dir (manifest.json + pulls.json + *.ndjson)   ← the stable DATA CONTRACT
         │                       shared, read-only input
+shared JUDGMENT skills (infra, prs.* namespace):
+   prs.classify → classified-issues.ndjson (theme/severity, the ONE LLM pass)
+   prs.reinforce → reinforcement-proposals.json (recurring pattern → cheapest guidance change)
+        │                       reused by the dev report AND /prs-reinforce
 report providers (OPEN REGISTRY): any prs-report.<name> skill
    kpis · collab · dev · exec (built-ins)  +  your prs-report.<custom>   each reads the run dir, writes ONE .md
         ▲   name→skill resolution: report "X" ⇒ skill "prs-report.X"
-/prs-insights (DEFAULT command) → parse args → run fetch ONCE → spawn the selected report subagents in parallel
+/prs-insights (DEFAULT command, READ-ONLY) → parse args → run fetch ONCE → spawn the selected report subagents in parallel
+/prs-reinforce (MUTATING command) → fetch → classify → reinforce → APPLY edits + report → branch + PR   (default: autonomous; --interactive adds pick + diff-confirm gates)
         ▲   thin delegators (fixed params, no logic of their own)  ·  /prs-insights-grill (asks, then delegates)
 presets: /prs-full (--reports all) · /prs-coaching (--reports dev)
 ```
 
 - **`prs.fetch`** is the *only* data producer. It does collection + **deterministic, zero-LLM enrichment** only — never any report or theme/severity judgment. Its run-dir schema is the **public contract** every report (built-in or custom) depends on — documented in `docs/custom-reports.md`.
+- **Shared judgment skills (`prs.classify`, `prs.reinforce`)** are the single home for the LLM layers. `prs.classify` is the **one** classification pass — theme/severity/actionability/resolution per comment, written as `classified-issues.ndjson` (enums in `skills/prs.classify/references/classification.md`). `prs.reinforce` clusters recurring themes and maps each to the cheapest guidance change, returning **structured** `proposals[]` (`reinforcement-proposals.json`; ladder in `skills/prs.reinforce/references/reinforcement.md`). Both are infra in the `prs.*` namespace (like `prs.fetch`), not selectable reports. The **dev report** and **`/prs-reinforce`** both consume them, so the enums have one source of truth. These artifacts are separate files so `prs.fetch` stays zero-LLM.
+- **`/prs-reinforce` is the one mutating command.** Same fetch→classify→reinforce pipeline as the reports, then the action loop the read-only reports refuse: **apply** edits to the repo's `.claude` guidance (additive fully, in-place rewrites best-effort) → write a reinforcement report → branch + PR. **`--interactive` (default `false`)** controls the human gates: `false` = autonomous (apply *all* `applyable` proposals and open the PR with no pick or diff confirmation — the PR is the review surface); `true` = multi-select pick + explicit diff-review confirmation before pushing. Two guards hold in **both** modes and are non-skippable: analyzed repo (`manifest.repo`) == local checkout before editing, and "no systemic pattern → no PR". Proposals targeting installed plugins / paths outside the checkout are `applyable:false` and become PR-body notes, never file edits. `/prs-insights` stays read-only; keep the write/read split.
 - **Report providers** are selected by name: report `X` ⇒ skill `prs-report.X`. `--reports all` runs only the four built-ins; custom reports are opt-in by name. Any `prs-report.*` skill is instantly selectable with **no command changes** — that's the extension point.
 - All reports are independent (`exec` recomputes its own top-line rather than reading siblings), so parallel fan-out over any subset is safe.
 - **Modes beyond named reports:** `--ask "<prompt>"` spawns a generic subagent that answers a one-off question against the dataset (no skill needed); `--fetch-only` stops after fetch and returns the run-dir path; `--run-dir <path>` reuses an existing populated run dir with no GitHub round-trip.
@@ -61,7 +68,7 @@ presets: /prs-full (--reports all) · /prs-coaching (--reports dev)
 
 `<scratch>/prs-insights/<since>_to_<until>_<scope>/` where `<scope>` is `team` (all users) or `+`-joined logins. If a run dir with `manifest.json` already exists, it is **reused** rather than refetched. `manifest.json` is the source of truth for window/scope; the dir name is cosmetic.
 
-Outputs: `pulls.json` (enriched with `type` + `sublabels[]`), `reviews.ndjson` (`is_bot`), `review-comments.ndjson` (`is_bot`, `is_self_reply`, `excluded`, `layer`), `issue-comments.ndjson` (`is_bot`, `is_self_reply`, `excluded`), `manifest.json`.
+Outputs (from `prs.fetch`): `pulls.json` (enriched with `type` + `sublabels[]`), `reviews.ndjson` (`is_bot`), `review-comments.ndjson` (`is_bot`, `is_self_reply`, `excluded`, `layer`), `issue-comments.ndjson` (`is_bot`, `is_self_reply`, `excluded`), `manifest.json`. Two **optional derived** files appear once the judgment skills run: `classified-issues.ndjson` (`prs.classify`) and `reinforcement-proposals.json` (`prs.reinforce`) — reused if present.
 
 ### Enrichment rules (fetch-pr-data.sh)
 
@@ -69,7 +76,7 @@ All mechanical, defined in `skills/prs.fetch/references/taxonomy.md` and encoded
 - **PR `type`** and **comment `layer`** are inferred from `files[]`/comment **paths** (not titles) via a **layout config** — an ordered list of path-pattern rules resolved as `--layout <path>` → repo-local `.prs-insights.json` → bundled `references/layouts/monorepo.json` (the default, which reproduces the original built-in behavior). Each path takes the first matching rule's `role` (→ PR `type`: front-end / back-end / full-stack / e2e-testing / misc) and `layer` (FE / BE / test / migration / docs / infra); `sublabel` (e.g. `migration`) is appended to `sublabels[]`.
 - **`excluded` = is_bot OR is_self_reply** — bots (`*[bot]` logins) and PR-author self-replies are flagged so reports can drop them.
 
-The **`dev`** skill is the only one that does LLM classification (theme/severity of review feedback) — see `skills/prs-report.dev/references/classification.md` for the fixed theme/severity enums and the "recurring ≥3× → cheapest enforcement" mapping. Every report fills in its own `assets/report-template.md` and writes to `reports/prs-insights/<since>_to_<until>_<scope>_<name>.md`.
+LLM classification lives in **`prs.classify`** (theme/severity of review feedback) — see `skills/prs.classify/references/classification.md` for the fixed enums — and the "recurring ≥3× → cheapest enforcement" mapping lives in **`prs.reinforce`** (`skills/prs.reinforce/references/reinforcement.md`). The **`dev`** report composes both and renders them; it no longer defines the enums itself. Every report fills in its own `assets/report-template.md` and writes to `reports/prs-insights/<since>_to_<until>_<scope>_<name>.md`.
 
 ## Conventions & gotchas
 
@@ -78,6 +85,8 @@ The **`dev`** skill is the only one that does LLM classification (theme/severity
 - `gh search prs --limit 200` caps results; per-PR fetches run under `xargs -P 10` and swallow individual errors (`|| true`), so a partial dataset fails soft rather than aborting.
 - The fetch script targets **portable Bash** (`set -euo pipefail`, GNU-then-BSD `date` fallback). Preserve that when editing.
 - Reports are **read-only except for the single report file each writes**. Trends are stateless ("n/a first run") — there is no persisted run history yet.
+- **`/prs-reinforce` is the only command that mutates the repo / opens PRs.** It is **autonomous by default** (`--interactive false`): applies all `applyable` proposals and opens the PR with no pick/diff gate. `--interactive true` restores the multi-select pick + explicit diff-review confirmation. The analyzed-repo == local-checkout guard and the "no pattern → no PR" check are **always** on (non-skippable, both modes). Keep `/prs-insights` (and all reports) read-only.
+- **Enum single-source-of-truth:** theme/severity enums live only in `skills/prs.classify/references/classification.md`; the reinforcement ladder only in `skills/prs.reinforce/references/reinforcement.md`. The dev report and `/prs-reinforce` both consume `prs.classify`/`prs.reinforce` output — don't re-define these enums anywhere else.
 
 ## Editing skills & commands
 
