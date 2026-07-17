@@ -1,0 +1,6 @@
+# Code owners for git-insights-toolkit.
+# Every change requires an approving review from an owner listed here.
+# See: https://docs.github.com/repositories/managing-your-repos-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repo.
+*       @hiagoradd
