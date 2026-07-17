@@ -4,7 +4,7 @@
 FILL-IN TEMPLATE. Replace every {{placeholder}}. Tables for anything countable, ████░░ bars for
 distributions, 🔴 critical / 🟠 blocker / 🟡 suggestion. Every narrative number must trace to a
 table below it. This report is the evidence behind an applied set of guidance changes — it is
-committed and referenced in the PR body by /prs-reinforce.
+**not committed**; /prs-reinforce uses it directly as the **PR description**.
 -->
 
 **Scope:** {{scope_label}} · **Repo:** {{repo}} · **Window:** {{since}} → {{until}}
@@ -43,7 +43,7 @@ new, and a 1–2 line description of the change + why (recurrence + PR refs).}}
 ## Not auto-applied — do manually
 
 *Chosen suggestions whose target lives outside this checkout (installed plugin, external path) or is
-process-only. Mirrored in the PR body.*
+process-only. This section is part of the PR description (the whole report is the PR body).*
 
 {{list, or "none". For each: target + the exact text/action, and why it couldn't be auto-applied.}}
 

@@ -126,28 +126,33 @@ For each chosen **applyable** proposal, apply it to the working tree:
 Then write a **reinforcement report** (evidence behind the changes) to
 `reports/prs-insights/<since>_to_<until>_<scope>_reinforce.md` — filled from
 `${CLAUDE_PLUGIN_ROOT}/skills/prs.reinforce/assets/report-template.md` using the structured
-proposals + a short classified-feedback summary (severity split, top themes). This is the "report"
-that rides into the PR alongside the diff. Commit it too.
+proposals + a short classified-feedback summary (severity split, top themes). This report is a
+**local artifact only** — that path is gitignored — and becomes the **PR description** in Step 7.
+Do **not** stage or commit it: the PR must contain only the guidance-file edits.
 
 ## Step 7 — Branch → (diff gate, if interactive) → PR
 
 1. Create a branch off the repo's default branch: `prs-reinforce/<since>-to-<until>` (append
    `-<scope>` when scoped to specific users).
-2. Stage the applied edits + the reinforcement report.
+2. Stage **only** the applied guidance edits. Do **not** add the reinforcement report — it's
+   gitignored and used as the PR body (Step 7.4), never committed.
 3. **Diff confirmation — depends on `--interactive`:**
    - **`false` (default):** skip the confirmation. Print the `git diff --staged` to the output for
      the record, but proceed straight to committing and pushing. The PR is the review artifact.
    - **`true`:** show the **full `git diff --staged`** and **require an explicit confirmation**
      before pushing. If the user rejects, leave the branch/edits in place for manual review and stop
      — do not push.
-4. Commit, push, and open the PR with `gh pr create` against the default branch. The PR **body**
-   contains: the reinforcement report summary (evidence per change) **and** a "Not auto-applied — do
-   manually" section listing every non-applyable proposal with its target and text.
+4. Commit, push, and open the PR with `gh pr create` against the default branch, using the **full
+   reinforcement report as the PR body**:
+   `gh pr create --body-file reports/prs-insights/<since>_to_<until>_<scope>_reinforce.md`.
+   The report already contains the "Applied changes" and "Not auto-applied — do manually" sections,
+   so it is a complete, self-contained PR description — no separate summary to assemble.
 
 ## Step 8 — Report
 
 Return the PR URL, the branch name, the run directory (so a rerun reuses the data), and the
-reinforcement report path. Note any non-applyable items that were routed to the PR body.
+reinforcement report path (a local, gitignored artifact — its content is the PR body). Note any
+non-applyable items that were routed to the PR body.
 
 ## Notes & boundaries
 
