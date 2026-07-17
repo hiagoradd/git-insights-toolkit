@@ -1,0 +1,22 @@
+name: release-please
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      # Keeps a standing "release" PR open that bumps .claude-plugin/plugin.json
+      # and updates CHANGELOG.md from Conventional Commit history. Merge that PR
+      # to cut a release. Config lives in release-please-config.json; the current
+      # version is tracked in .release-please-manifest.json.
+      - uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
