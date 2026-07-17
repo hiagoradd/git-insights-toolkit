@@ -46,8 +46,9 @@ It defaults to **all authors over the last 7 days**. It fetches the dataset once
 | `/prs-insights-grill` | Guided "grill me" front-end — interviews you, then runs the right `/prs-insights` for you |
 | `/prs-full` | Preset: all four built-in reports (`--reports all`) |
 | `/prs-coaching` | Preset: just the developer-coaching report (`--reports dev`) |
+| `/prs-reinforce` | **Acts on** the coaching insights: finds recurring review feedback, proposes concrete guidance changes (`.claude/rules`, `CLAUDE.md`, skills), applies them, and opens a PR. **Autonomous by default**; add `--interactive true` to pick which to tackle and approve the diff before it pushes |
 
-All are namespaced by the plugin (e.g. `/git-insights-toolkit:prs-insights`). The presets are thin wrappers over `/prs-insights` — copy them to make your own.
+All are namespaced by the plugin (e.g. `/git-insights-toolkit:prs-insights`). The presets are thin wrappers over `/prs-insights` — copy them to make your own. `/prs-reinforce` is the **only** command that changes files or opens PRs; everything else is read-only.
 
 ### Options
 
@@ -99,7 +100,7 @@ When you produce a custom report (via `--ask` or the grill workflow), the toolki
 | **Developer Coaching** | `prs-report.dev` | Recurring review feedback classified by theme & severity → concrete reinforcement proposals |
 | **Executive Summary** | `prs-report.exec` | One-page, plain-language PR-health digest for PMs and leadership |
 
-The **fetch** step (`prs.fetch`) is the shared data producer: it pulls PR metadata, files, reviews, review comments, and issue comments, then applies deterministic (no-LLM) enrichment — PR type/stack, comment layer, and bot/self-reply exclusion flags — into a reusable run directory. Only the **coaching** report uses an LLM, to classify feedback themes.
+The **fetch** step (`prs.fetch`) is the shared data producer: it pulls PR metadata, files, reviews, review comments, and issue comments, then applies deterministic (no-LLM) enrichment — PR type/stack, comment layer, and bot/self-reply exclusion flags — into a reusable run directory. The LLM work is factored into two shared skills: **`prs.classify`** (one pass tagging each comment's theme/severity → `classified-issues.ndjson`) and **`prs.reinforce`** (recurring pattern → cheapest guidance change → `reinforcement-proposals.json`). The **coaching** report and **`/prs-reinforce`** both build on those, so the classification enums stay one source of truth.
 
 ## Requirements
 

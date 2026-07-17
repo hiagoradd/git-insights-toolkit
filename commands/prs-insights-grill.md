@@ -54,7 +54,7 @@ confirm.
 Ask only the ones that apply. Keep each to one focused `AskUserQuestion`; combine when natural.
 
 - **Goal includes Coaching (`dev`)** → *which themes matter most?* (`multiSelect`, from the fixed
-  enums in `skills/prs-report.dev/references/classification.md`): correctness-bug · convention/style
+  enums in `skills/prs.classify/references/classification.md`): correctness-bug · convention/style
   · architecture/layering · test-coverage · error-handling/observability · migration-hygiene ·
   pr-scope/hygiene · performance · security · a11y · naming/docs. A narrowing to specific themes
   becomes a composed `--ask` (see Step 3); "all themes" just runs `dev` as-is.
