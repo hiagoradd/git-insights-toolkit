@@ -123,36 +123,44 @@ For each chosen **applyable** proposal, apply it to the working tree:
 - `change_type: modify` — apply the in-place rewrite as a best-effort **Edit** at the `anchor`. The
   mandatory diff review in Step 7 is the safety net for a bad rewrite — never skip it.
 
-Then write a **reinforcement report** (evidence behind the changes) to
-`reports/prs-insights/<since>_to_<until>_<scope>_reinforce.md` — filled from
+Then write a **reinforcement report** (evidence behind the changes) to the **run directory**, at
+`<run_dir>/reinforce-report.md` — filled from
 `${CLAUDE_PLUGIN_ROOT}/skills/prs.reinforce/assets/report-template.md` using the structured
-proposals + a short classified-feedback summary (severity split, top themes). This report is a
-**local artifact only** — that path is gitignored — and becomes the **PR description** in Step 7.
-Do **not** stage or commit it: the PR must contain only the guidance-file edits.
+proposals + a short classified-feedback summary (severity split, top themes). The run directory
+lives in scratch space, **outside the analyzed repo's working tree**, so this report can never be
+staged or committed no matter what the target repo's `.gitignore` contains — it becomes the **PR
+description** in Step 7, and that is its only role. **Do not write it under the analyzed repo**
+(e.g. `reports/prs-insights/`): the PR must contain **only** the guidance-file edits, and relying
+on the target repo to gitignore the path is exactly the leak this avoids.
 
 ## Step 7 — Branch → (diff gate, if interactive) → PR
 
 1. Create a branch off the repo's default branch: `prs-reinforce/<since>-to-<until>` (append
    `-<scope>` when scoped to specific users).
-2. Stage **only** the applied guidance edits. Do **not** add the reinforcement report — it's
-   gitignored and used as the PR body (Step 7.4), never committed.
+2. Stage **only** the applied guidance edits, **by explicit path** — `git add` each file you edited
+   in Step 6 (the `target_file` of every applied proposal). **Never** `git add -A` / `git add .` /
+   `git add <dir>`: a broad add would sweep in unrelated untracked files. The reinforcement report
+   lives in the run dir outside the repo, so it is not stageable from here — but even so, verify with
+   `git status` that **only** the intended guidance files are staged before committing.
 3. **Diff confirmation — depends on `--interactive`:**
    - **`false` (default):** skip the confirmation. Print the `git diff --staged` to the output for
      the record, but proceed straight to committing and pushing. The PR is the review artifact.
    - **`true`:** show the **full `git diff --staged`** and **require an explicit confirmation**
      before pushing. If the user rejects, leave the branch/edits in place for manual review and stop
      — do not push.
-4. Commit, push, and open the PR with `gh pr create` against the default branch, using the **full
-   reinforcement report as the PR body**:
-   `gh pr create --body-file reports/prs-insights/<since>_to_<until>_<scope>_reinforce.md`.
+4. Commit, push, and open the PR with `gh pr create` against the default branch, using the **exact
+   reinforcement report file from Step 6 as the PR body** — pass the same `<run_dir>/reinforce-report.md`
+   path you just wrote, so the PR description and the report are one artifact and cannot drift:
+   `gh pr create --body-file "<run_dir>/reinforce-report.md"`.
    The report already contains the "Applied changes" and "Not auto-applied — do manually" sections,
-   so it is a complete, self-contained PR description — no separate summary to assemble.
+   so it is a complete, self-contained PR description — do **not** compose a separate body.
 
 ## Step 8 — Report
 
 Return the PR URL, the branch name, the run directory (so a rerun reuses the data), and the
-reinforcement report path (a local, gitignored artifact — its content is the PR body). Note any
-non-applyable items that were routed to the PR body.
+reinforcement report path (`<run_dir>/reinforce-report.md` — a scratch artifact outside the repo;
+its content is the PR body, never a committed file). Note any non-applyable items that were routed
+to the PR body.
 
 ## Notes & boundaries
 
@@ -164,6 +172,10 @@ non-applyable items that were routed to the PR body.
   the "no pattern → no PR" check hold in **both** modes.
 - It never edits installed-plugin files or anything outside the checkout — those proposals become PR
   notes (see `prs.reinforce` `applyable`).
+- **The reinforcement report is written to the run dir (scratch), never into the analyzed repo**, and
+  is passed to `gh pr create --body-file` as the PR description. The commit therefore contains **only**
+  the guidance-file edits. This holds against **any** target repo — it does not depend on that repo
+  gitignoring a `reports/` path (which is the plugin repo's own convention, not the analyzed repo's).
 - Reuses the exact same run dir / classified / proposals artifacts as the reports, so running
   `/prs-coaching` (or `/prs-insights --reports dev`) and `/prs-reinforce` on the same window shares
   work — neither re-classifies.
