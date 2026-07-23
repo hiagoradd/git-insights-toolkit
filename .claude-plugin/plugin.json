@@ -1,7 +1,7 @@
 {
   "name": "git-insights-toolkit",
   "description": "Git analytics for Claude Code, starting with PR insights: fetches a repo's PR history once, then generates delivery KPIs, review-collaboration, developer-coaching, and executive-summary reports — and, with /prs-reinforce, turns recurring review feedback into applied guidance changes (.claude/rules, CLAUDE.md, skills) via a PR. Built to expand to more Git analytics over time.",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "author": {
     "name": "hiagoradd"
   },
