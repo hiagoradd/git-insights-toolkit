@@ -143,14 +143,21 @@ after Claude Code reloads skills (e.g. next session).
 
 ---
 
-## Save a one-off `--ask` as a reusable skill (assisted)
+## Create a reusable report skill (assisted)
 
-You don't have to hand-author. After `/prs-insights --ask "…"` (or the `/prs-insights-grill`
-workflow) produces a custom report, the workflow **offers to keep it**: say yes and the
-**`prs.report-scaffold`** skill scaffolds a `prs-report.<name>` skill (SKILL.md +
-`assets/report-template.md`) into your repo's `.claude/skills/`, derived from the report that was
-just produced and this same contract. It's then selectable via `/prs-insights --reports <name>`.
-You can also trigger it directly — "save this report as a skill".
+You don't have to hand-author. Two assisted paths write exactly the shape above into your repo's
+`.claude/skills/`, both selectable afterwards via `/prs-insights --reports <name>`:
+
+- **Reactive — `prs.report-scaffold`.** After `/prs-insights --ask "…"` (or the
+  `/prs-insights-grill` workflow) produces a custom report, the workflow **offers to keep it**: say
+  yes and it scaffolds a `prs-report.<name>` skill derived from the report that was just produced.
+  Trigger it directly with "save this report as a skill".
+- **Proactive — `prs.report-creator`.** When you already know the report you want and haven't run
+  anything yet, describe it and this skill designs it from scratch — "create a report with all the
+  KPIs plus how many PRs were bugfixes", or "everything in dev-coaching plus a per-user KPI
+  breakdown". Add **"grill me"** (or `--grill`) to be interviewed for the spec instead of giving it
+  inline. It forks a built-in's structure when you reference one, and always authors a
+  **parameterized** report (scope flows from `--users` at run time — no hardcoded login).
 
 ---
 
